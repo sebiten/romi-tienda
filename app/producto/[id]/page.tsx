@@ -31,11 +31,12 @@ interface Product {
   updated_at: string;
 }
 
-export default async function ProductPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function ProductPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
   // 1) Obtenemos el producto por su ID desde Supabase
   const supabase = await createClient();
   const { data: product, error } = await supabase
