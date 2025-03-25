@@ -1,11 +1,10 @@
 "use client";
 
-import { useRef, useState, FormEvent } from "react";
+import { useRef, useState, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/utils/supabase/client";
-import DeleteProductForm from "./Delete-product-form";
 
 // Tamaño máximo de archivo: 2 MB (ajústalo a tus necesidades)
 const MAX_SIZE = 2 * 1024 * 1024;
@@ -13,21 +12,18 @@ const MAX_SIZE = 2 * 1024 * 1024;
 export default function NewProductForm() {
     const [submitting, setSubmitting] = useState(false);
     const [file, setFile] = useState<File | null>(null);
+    const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
+    const supabase = createClient();
     // Ref al <form> real en el DOM
     const formRef = useRef<HTMLFormElement>(null);
-
-    // Cliente de Supabase en el frontend (anon key o sesión del usuario)
-    const supabase = createClient();
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
         setSubmitting(true);
-
         // 1. Validamos el archivo (opcional)
         let fileName = "";
         let publicUrl = "";
-
         if (file) {
             // Validar tamaño
             if (file.size > MAX_SIZE) {
@@ -35,15 +31,6 @@ export default function NewProductForm() {
                 setSubmitting(false);
                 return;
             }
-
-            // // Validar tipo MIME
-            // const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-            // if (!allowedTypes.includes(file.type)) {
-            //     alert("Solo se permiten imágenes JPG o PNG.");
-            //     setSubmitting(false);
-            //     return;
-            // }
-
             // Si pasa las validaciones, subimos la imagen
             fileName = `${file.name}`;
             const { data: uploadData, error: uploadError } = await supabase.storage
@@ -76,6 +63,8 @@ export default function NewProductForm() {
         const priceStr = (formData.get("price") as string) || "0";
         const sizesStr = (formData.get("sizes") as string) || "";
         const colorsStr = (formData.get("colors") as string) || "";
+        const stockStr = (formData.get("stock") as string) || "0";
+        const category_id = (formData.get("category_id") as string)?.trim() || "";
 
         // Validaciones sencillas de campos
         if (title.length < 3) {
@@ -100,6 +89,19 @@ export default function NewProductForm() {
             .split(",")
             .map((c) => c.trim())
             .filter((c) => c !== "");
+        // stocks & category_id
+        const stock = parseInt(stockStr);
+        if (isNaN(stock) || stock < 0) {
+            alert("El stock debe ser un número entero mayor o igual a 0.");
+            setSubmitting(false);
+            return;
+        }
+        if (!category_id || category_id.length < 10) {
+            alert("Debes ingresar un ID de categoría válido.");
+            setSubmitting(false);
+            return;
+        }
+
 
         // 3. Insertar en la tabla products
         const { data: insertData, error: insertError } = await supabase
@@ -112,9 +114,12 @@ export default function NewProductForm() {
                     sizes,
                     colors,
                     images: publicUrl ? [publicUrl] : [],
+                    stock,
+                    category_id,
                 },
             ])
-            .select(); // para ver la fila insertada
+            .select();
+        // para ver la fila insertada
 
         // 4. Si falla el insert, opcionalmente borramos la imagen
         if (insertError) {
@@ -139,6 +144,19 @@ export default function NewProductForm() {
         setFile(null);
         setSubmitting(false);
     }
+
+    // Cargar categorías al cargar el formulario
+    useEffect(() => {
+        async function fetchCategories() {
+            const { data, error } = await supabase.from("categories").select("id, name");
+            if (error) {
+                console.error("Error fetching categories:", error);
+            } else {
+                setCategories(data || []);
+            }
+        }
+        fetchCategories();
+    }, []);
 
     return (
         <>
@@ -193,6 +211,32 @@ export default function NewProductForm() {
                     <span className="text-sm font-medium">Colores (coma separadas)</span>
                     <Input name="colors" className="mt-1" />
                 </label>
+                {/* Stock */}
+                <label className="block">
+                    <span className="text-sm font-medium">Stock</span>
+                    <Input
+                        type="number"
+                        name="stock"
+                        placeholder="Cantidad disponible"
+                        min="0"
+                        className="mt-1"
+                        required
+                    />
+                </label>
+
+                {/* Categoría */}
+                <label className="block">
+                    <span className="text-sm font-medium">Categoría</span>
+                    <select name="category_id" required className="mt-1 w-full border rounded px-3 py-2">
+                        <option value="">Selecciona una categoría</option>
+                        {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
 
                 {/* Imagen */}
                 <label className="block">
@@ -210,7 +254,6 @@ export default function NewProductForm() {
                     {submitting ? "Creando..." : "Crear producto"}
                 </Button>
             </form>
-            <DeleteProductForm />
         </>
     );
 }

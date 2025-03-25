@@ -1,4 +1,4 @@
-import type { Config } from "tailwindcss";
+import type { Config } from "tailwindcss"
 
 const config = {
   darkMode: ["class"],
@@ -7,6 +7,7 @@ const config = {
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
+    "*.{js,ts,jsx,tsx,mdx}",
   ],
   prefix: "",
   theme: {
@@ -52,6 +53,19 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Custom beige palette
+        beige: {
+          50: "#F5F1EA",
+          100: "#E2DCD0",
+          200: "#D6C7B0",
+          300: "#C9B99E",
+          400: "#B8A78C",
+          500: "#A69681",
+          600: "#8A7B68",
+          700: "#6E614F",
+          800: "#5D4B3C",
+          900: "#3D3023",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -72,9 +86,13 @@ const config = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      fontFamily: {
+        serif: ["var(--font-playfair)", "serif"],
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
-} satisfies Config;
+} satisfies Config
 
-export default config;
+export default config
+

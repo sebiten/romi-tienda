@@ -17,7 +17,7 @@ export default async function Navbar() {
   } = await supabase.auth.getUser();
 
   return (
-    <nav className=" shadow-sm p-4">
+    <nav className=" shadow-sm p-4 bg-[#E2DCD0] ">
       <div className="container mx-auto flex flex-wrap items-center justify-between">
         {/* Sección izquierda: Link de Inicio y, si hay user, link a Perfil */}
         <div className="flex items-center gap-4">

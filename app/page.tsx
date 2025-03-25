@@ -1,8 +1,9 @@
 import BlackFridayBanner from "@/components/BlackFriday";
 import Hero from "@/components/Hero";
-import ProductsGrid from "@/components/ProductGrid";
+import { ProductGrid } from "@/components/ProductGrid";
 import TitleUsable from "@/components/Title";
 import { Product } from "@/lib/types";
+import { getCategoryNameById } from "@/utils/getCategoryNameById";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 
@@ -21,7 +22,7 @@ export default async function Home() {
       <main className="flex-1 flex flex-col w-full">
         <Hero />
         {/* Grid de productos */}
-        <ProductsGrid products={(products as Product[]) ?? []} />
+        <ProductGrid products={products!}  />
         <BlackFridayBanner
           title="Black Friday Mega Sale"
           subtitle="Descuentos increíbles solo por tiempo limitado"
