@@ -1,65 +1,257 @@
+"use client"
 
-import Link from "next/link";
-import { signOutAction } from "@/app/actions";
-import { createClient } from "@/utils/supabase/server";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
-import { ThemeSwitcher } from "./theme-switcher";
+import type React from "react"
 
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import Image from "next/image"
+import { signOutAction } from "@/app/actions"
+import { Button } from "./ui/button"
+import { Menu, X, User, LogOut, ChevronDown, ShoppingBag, Heart, Search } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-export default async function Navbar() {
-  // Creamos el cliente de Supabase en el servidor
-  const supabase = await createClient();
+interface NavbarProps {
+  user: any | null
+}
 
-  // Obtenemos al usuario actual
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function Navbar({ user }: NavbarProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10)
+    }
+
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   return (
-    <nav className=" shadow-sm p-4 bg-[#E2DCD0] ">
-      <div className="container mx-auto flex flex-wrap items-center justify-between">
-        {/* Sección izquierda: Link de Inicio y, si hay user, link a Perfil */}
-        <div className="flex items-center gap-4">
-          <Link href="/">
-            <Button variant="secondary" className="cursor-pointer">
-              Inicio
-            </Button>
-          </Link>
-          {user && (
-            <Link href="/perfil">
-              <Button variant="ghost" size="sm">
-                Perfil
-              </Button>
+    <header
+      className={`sticky top-0 z-50 w-full transition-all  duration-300 ${
+        isScrolled ? "bg-beige-50/95 backdrop-blur-sm shadow-sm" : "bg-beige-100"
+      }`}
+    >
+      {/* Top announcement bar */}
+      <div className="bg-beige-800 text-beige-50 py-1.5 text-center text-xs md:text-sm font-light">
+        <p>Envío gratis en pedidos superiores a $15000 Arg</p>
+      </div>
+
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16 md:h-20">
+          {/* Mobile menu button */}
+          <button
+            className="md:hidden p-2 text-beige-800 hover:text-beige-600 transition-colors"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
+          >
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+
+          {/* Logo */}
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 md:w-10 md:h-10 relative rounded-full overflow-hidden">
+                <Image src="/almalucia.webp" alt="Alma Lucia" fill className="object-cover" />
+              </div>
+              <span className="font-serif text-xl md:text-2xl text-beige-800 hidden sm:inline-block">Alma Lucia</span>
             </Link>
-          )}
-        </div>
+          </div>
 
-        {/* Sección derecha: Theme Switcher + estado de usuario */}
-        <div className="flex gap-2 items-center mt-2 md:mt-0">
-       
+          {/* Desktop navigation */}
+          <nav className="hidden md:flex items-center space-x-1 ">
+            <NavLink href="/">Inicio</NavLink>
+            <NavLink href="/">Tienda</NavLink>
+            <NavLink href="/">Contacto</NavLink>
+          </nav>
 
-          {user ? (
-            <>
-              <span className="text-sm text-gray-600">Hola👋 {user.email}!</span>
-              <form action={signOutAction}>
-                <Button type="submit" variant="ghost">
-                  Cerrar Session
+          {/* Right section: search, cart, user */}
+          <div className="flex items-center space-x-1 md:space-x-2">
+          
+
+           
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-beige-700 hover:text-beige-800 hover:bg-beige-200/50 relative"
+              aria-label="Carrito"
+            >
+              <ShoppingBag size={20} />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-beige-800 text-beige-50 rounded-full text-xs flex items-center justify-center">
+                0
+              </span>
+            </Button>
+
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-beige-700 hover:text-beige-800 hover:bg-beige-200/50 gap-1"
+                  >
+                    <span className="hidden sm:inline-block max-w-[100px] truncate">{user.email?.split("@")[0]}</span>
+                    <ChevronDown size={16} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-beige-50 border-beige-200">
+                  <div className="px-3 py-2 text-sm font-medium text-beige-800 border-b border-beige-100">
+                    <p className="truncate">{user.email}</p>
+                  </div>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/perfil"
+                      className="cursor-pointer text-beige-700 focus:text-beige-800 focus:bg-beige-100"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Mi Perfil</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/orders"
+                      className="cursor-pointer text-beige-700 focus:text-beige-800 focus:bg-beige-100"
+                    >
+                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      <span>Mis Pedidos</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-beige-100" />
+                  <DropdownMenuItem asChild>
+                    <form action={signOutAction} className="w-full">
+                      <button
+                        type="submit"
+                        className="flex items-center w-full text-beige-700 focus:text-beige-800 focus:bg-beige-100"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Cerrar Sesión</span>
+                      </button>
+                    </form>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="hidden sm:flex items-center space-x-1">
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-beige-700 hover:text-beige-800 hover:bg-beige-200/50"
+                >
+                  <Link href="/sign-in">Iniciar Sesión</Link>
                 </Button>
-              </form>
-            </>
-          ) : (
-            <>
-              <Button asChild size="sm" variant="ghost">
-                <Link href="/sign-in">Iniciar Sesion</Link>
-              </Button>
-              <Button asChild size="sm" variant="ghost">
-                <Link href="/sign-up">Registrarse</Link>
-              </Button>
-            </>
-          )}
+                <Button asChild className="bg-beige-700 hover:bg-beige-800 text-beige-50">
+                  <Link href="/sign-up">Registrarse</Link>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </nav>
-  );
+
+      {/* Mobile menu */}
+      {isMenuOpen && (
+        <div className="md:hidden bg-beige-50 border-t border-beige-200 shadow-lg">
+          <div className="container mx-auto px-4 py-4">
+            <nav className="flex flex-col space-y-2">
+              <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>
+                Inicio
+              </MobileNavLink>
+              <MobileNavLink href="/shop" onClick={() => setIsMenuOpen(false)}>
+                Tienda
+              </MobileNavLink>
+              <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>
+                Nosotros
+              </MobileNavLink>
+              <MobileNavLink href="/contact" onClick={() => setIsMenuOpen(false)}>
+                Contacto
+              </MobileNavLink>
+
+              {!user && (
+                <>
+                  <div className="h-px bg-beige-200 my-2"></div>
+                  <MobileNavLink href="/sign-in" onClick={() => setIsMenuOpen(false)}>
+                    Iniciar Sesión
+                  </MobileNavLink>
+                  <MobileNavLink href="/sign-up" onClick={() => setIsMenuOpen(false)}>
+                    Registrarse
+                  </MobileNavLink>
+                </>
+              )}
+
+              {user && (
+                <>
+                  <div className="h-px bg-beige-200 my-2"></div>
+                  <div className="px-3 py-2 text-sm font-medium text-beige-800">
+                    <p className="truncate">{user.email}</p>
+                  </div>
+                  <MobileNavLink href="/perfil" onClick={() => setIsMenuOpen(false)}>
+                    <User className="mr-2 h-4 w-4" />
+                    Mi Perfil
+                  </MobileNavLink>
+                  <MobileNavLink href="/orders" onClick={() => setIsMenuOpen(false)}>
+                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    Mis Pedidos
+                  </MobileNavLink>
+                  <form action={signOutAction} className="w-full">
+                    <button
+                      type="submit"
+                      className="flex items-center w-full px-3 py-2 text-beige-700 hover:text-beige-800 hover:bg-beige-100 rounded-md text-sm"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Cerrar Sesión</span>
+                    </button>
+                  </form>
+                </>
+              )}
+            </nav>
+          </div>
+        </div>
+      )}
+    </header>
+  )
 }
+
+// Desktop navigation link
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="px-3 py-2 text-beige-700 hover:text-beige-800 hover:bg-beige-200/50 rounded-md text-sm font-medium transition-colors"
+    >
+      {children}
+    </Link>
+  )
+}
+
+// Mobile navigation link
+function MobileNavLink({
+  href,
+  children,
+  onClick,
+}: {
+  href: string
+  children: React.ReactNode
+  onClick?: () => void
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center px-3 py-2 text-beige-700 hover:text-beige-800 hover:bg-beige-100 rounded-md text-sm"
+      onClick={onClick}
+    >
+      {children}
+    </Link>
+  )
+}
+

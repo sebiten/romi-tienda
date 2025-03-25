@@ -84,11 +84,11 @@ export default function Footer() {
             <div className="space-y-3">
               <div className="flex items-start">
                 <MapPin className="w-5 h-5 text-beige-500 mt-0.5 mr-2 flex-shrink-0" />
-                <span className="text-beige-600 text-sm">Av. Siempre Viva 123, Springfield, MX</span>
+                <span className="text-beige-600 text-sm">Salta, Salta Argentina</span>
               </div>
               <div className="flex items-start">
                 <Phone className="w-5 h-5 text-beige-500 mt-0.5 mr-2 flex-shrink-0" />
-                <span className="text-beige-600 text-sm">+52 (123) 456-7890</span>
+                <span className="text-beige-600 text-sm">+54 (123) 456-7890</span>
               </div>
               <div className="flex items-start">
                 <Mail className="w-5 h-5 text-beige-500 mt-0.5 mr-2 flex-shrink-0" />

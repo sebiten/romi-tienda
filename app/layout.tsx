@@ -1,45 +1,39 @@
-import HeaderAuth from "@/components/NavBar";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { hasEnvVars } from "@/utils/supabase/check-env-vars";
-import { Geist } from "next/font/google";
-import { ThemeProvider } from "next-themes";
-import Link from "next/link";
+import type React from "react";
 import "./globals.css";
+import { Playfair_Display } from "next/font/google";
+
 import Footer from "@/components/Footer";
+import { createClient } from "@/utils/supabase/server";
+import { ThemeProvider } from "next-themes";
+import Navbar from "@/components/NavBar";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
-
-export const metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
-};
-
-const geistSans = Geist({
-  display: "swap",
+const playfair = Playfair_Display({
   subsets: ["latin"],
+  variable: "--font-playfair",
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Get user for Navbar
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
-    <html lang="en" className={geistSans.className} suppressHydrationWarning>
-      <body>
+    <html lang="es" suppressHydrationWarning>
+      <body className={`${playfair.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >
-          <HeaderAuth />
-          <main className="min-h-screen flex flex-col items-center">
-            {children}
-          </main>
+          <Navbar user={user} />
+          <main>{children}</main>
           <Footer />
         </ThemeProvider>
       </body>

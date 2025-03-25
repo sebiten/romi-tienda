@@ -19,7 +19,7 @@ const BlackFridayBanner: React.FC<BlackFridayBannerProps> = ({
   backgroundImage,
 }) => {
   return (
-    <section className="relative w-full h-[200px] md:h-[300px] flex items-center justify-center overflow-hidden ">
+    <section className="relative w-full h-[300px] md:h-[300px] flex items-center justify-center overflow-hidden py-8 md:py-12">
       {/* Fondo: imagen opcional o gradiente animado */}
       {backgroundImage ? (
         <img

@@ -32,7 +32,10 @@ export function ProductGrid({ products }: ProductGridProps) {
     <section className="py-16 px-4 md:px-6 bg-beige-50">
       <div className="container mx-auto">
         <div className="mb-12 text-center">
-          <TitleUsable title="Productos" />
+        <h2 className="font-serif text-xl md:text-4xl font-light tracking-wider mb-6 text-[#5D4B3C] animate-fade-in">
+          <span className="inline-block animate-slide-up">Productos</span>
+          {/* <span className="inline-block mx-2 md:mx-4 animate-slide-up animation-delay-150">Lucia</span> */}
+        </h2>
           <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-beige-500 to-transparent mx-auto mt-4"></div>
         </div>
 
