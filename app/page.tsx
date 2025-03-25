@@ -1,8 +1,8 @@
 import BlackFridayBanner from "@/components/BlackFriday";
-import { Product } from "@/components/Delete-product-form";
 import Hero from "@/components/Hero";
 import ProductsGrid from "@/components/ProductGrid";
 import TitleUsable from "@/components/Title";
+import { Product } from "@/lib/types";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 

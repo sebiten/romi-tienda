@@ -1,8 +1,8 @@
 // components/ProductsGrid.tsx
 import Link from "next/link";
 import React from "react";
-import { Product } from "./Delete-product-form";
 import TitleUsable from "./Title";
+import { Product } from "@/lib/types";
 
 interface ProductsGridProps {
     products: Product[];

@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
-import { deleteProductAction } from "./actions";
+import { deleteProductAction } from "../actions";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -14,27 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { z } from "zod";
-interface Product {
-    id: string;
-    title: string;
-    description: string | null;
-    price: number | null;
-    images?: string[];
-    sizes?: string[];
-    colors?: string[];
-    created_at?: string;
-    updated_at?: string;
-}
-
-/**
- * Validación de input para la acción de eliminación
- */
-export const DeleteSchema = z.object({
-    productId: z.string().uuid("El ID debe ser un UUID válido"),
-});
-
-
+import { Product } from "@/lib/types";
 
 export default async function DeleteProductPage() {
     const supabase = await createClient();
