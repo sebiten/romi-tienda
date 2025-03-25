@@ -1,3 +1,5 @@
+"use server"
+
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -11,8 +13,9 @@ if (!BUCKET_NAME) {
 const DeleteSchema = z.object({
     productId: z.string().uuid("El ID debe ser un UUID válido"),
 });
+
 export async function deleteProductAction(formData: FormData): Promise<void> {
-    "use server";
+   
 
     const productId = formData.get("productId");
     const parsed = DeleteSchema.safeParse({ productId });
