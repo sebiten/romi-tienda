@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
-import { DeleteSchema } from "./page";
+import { z } from "zod";
 
 
 const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET!;
@@ -8,6 +8,9 @@ if (!BUCKET_NAME) {
     throw new Error("Falta configurar NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET en .env.local");
 }
 
+const DeleteSchema = z.object({
+    productId: z.string().uuid("El ID debe ser un UUID válido"),
+});
 export async function deleteProductAction(formData: FormData): Promise<void> {
     "use server";
 

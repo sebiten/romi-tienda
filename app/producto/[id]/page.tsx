@@ -58,17 +58,7 @@ export default async function ProductPage(
           {/* Imagen principal / Carousel de imágenes */}
           {product.images && product.images.length > 0 ? (
             <div>
-              {/* Imagen con fill y object-cover (puede verse recortada) */}
-              {/* <div className="w-full h-96 relative">
-                <Image
-                  src={product.images[0]}
-                  alt={product.title || "Producto"}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div> */}
-
+      
               {/* Versión "original" para mostrar la imagen sin recortes */}
               <div className="mt-4 max-w-xl mx-auto border rounded overflow-hidden bg-white">
                 <img

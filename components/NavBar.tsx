@@ -22,12 +22,12 @@ export default async function Navbar() {
         {/* Sección izquierda: Link de Inicio y, si hay user, link a Perfil */}
         <div className="flex items-center gap-4">
           <Link href="/">
-            <Badge variant="secondary" className="cursor-pointer">
+            <Button variant="secondary" className="cursor-pointer">
               Inicio
-            </Badge>
+            </Button>
           </Link>
           {user && (
-            <Link href="/profile">
+            <Link href="/perfil">
               <Button variant="ghost" size="sm">
                 Perfil
               </Button>
@@ -37,25 +37,24 @@ export default async function Navbar() {
 
         {/* Sección derecha: Theme Switcher + estado de usuario */}
         <div className="flex gap-2 items-center mt-2 md:mt-0">
-          {/* Theme Switcher */}
-          <ThemeSwitcher />
+       
 
           {user ? (
             <>
-              <span className="text-sm text-gray-600">Hey, {user.email}!</span>
+              <span className="text-sm text-gray-600">Hola👋 {user.email}!</span>
               <form action={signOutAction}>
-                <Button type="submit" variant="outline">
-                  Sign out
+                <Button type="submit" variant="ghost">
+                  Cerrar Session
                 </Button>
               </form>
             </>
           ) : (
             <>
-              <Button asChild size="sm" variant="outline">
-                <Link href="/sign-in">Sign in</Link>
+              <Button asChild size="sm" variant="ghost">
+                <Link href="/sign-in">Iniciar Sesion</Link>
               </Button>
-              <Button asChild size="sm" variant="default">
-                <Link href="/sign-up">Sign up</Link>
+              <Button asChild size="sm" variant="ghost">
+                <Link href="/sign-up">Registrarse</Link>
               </Button>
             </>
           )}

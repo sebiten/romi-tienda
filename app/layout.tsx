@@ -1,4 +1,3 @@
-import DeployButton from "@/components/deploy-button";
 import HeaderAuth from "@/components/NavBar";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { hasEnvVars } from "@/utils/supabase/check-env-vars";
@@ -32,7 +31,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >
