@@ -33,7 +33,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <Navbar user={user} />
-          <main>{children}</main>
+          <main> {children}</main>
           <Footer />
         </ThemeProvider>
       </body>

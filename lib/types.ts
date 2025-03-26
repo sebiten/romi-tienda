@@ -11,3 +11,15 @@ export interface Product {
     created_at?: string;
     updated_at?: string;
 }
+
+export interface CartItem {
+    id: string
+    name: string
+    price: number
+    originalPrice: number
+    quantity: number
+    image: string
+    size: string
+    color: string
+    product_id: string
+  }

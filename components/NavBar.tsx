@@ -1,48 +1,59 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { signOutAction } from "@/app/actions"
-import { Button } from "./ui/button"
-import { Menu, X, User, LogOut, ChevronDown, ShoppingBag, Heart, Search } from "lucide-react"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { signOutAction } from "@/app/actions";
+import { Button } from "./ui/button";
+import {
+  Menu,
+  X,
+  User,
+  LogOut,
+  ChevronDown,
+  Heart,
+  Search,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { CartIcon } from "./CartIcon";
 
 interface NavbarProps {
-  user: any | null
+  user: any | null;
 }
 
 export default function Navbar({ user }: NavbarProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
+      setIsScrolled(window.scrollY > 10);
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all  duration-300 ${
-        isScrolled ? "bg-beige-50/95 backdrop-blur-sm shadow-sm" : "bg-beige-100"
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+        isScrolled
+          ? "bg-beige-50/95 backdrop-blur-sm shadow-sm"
+          : "bg-beige-100"
       }`}
     >
       {/* Top announcement bar */}
       <div className="bg-beige-800 text-beige-50 py-1.5 text-center text-xs md:text-sm font-light">
-        <p>Envío gratis en pedidos superiores a $15000 Arg</p>
+        <p>Envío gratis en pedidos superiores a $999 MXN</p>
       </div>
 
       <div className="container mx-auto px-4">
@@ -60,36 +71,29 @@ export default function Navbar({ user }: NavbarProps) {
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 md:w-10 md:h-10 relative rounded-full overflow-hidden">
-                <Image src="/almalucia.webp" alt="Alma Lucia" fill className="object-cover" />
+                <Image
+                  src="/almalucia.webp"
+                  alt="Alma Lucia"
+                  fill
+                  className="object-cover"
+                />
               </div>
-              <span className="font-serif text-xl md:text-2xl text-beige-800 hidden sm:inline-block">Alma Lucia</span>
+              <span className="font-serif text-xl md:text-2xl text-beige-800 hidden sm:inline-block">
+                Alma Lucia
+              </span>
             </Link>
           </div>
 
           {/* Desktop navigation */}
-          <nav className="hidden md:flex items-center space-x-1 ">
+          <nav className="hidden md:flex items-center space-x-1">
             <NavLink href="/">Inicio</NavLink>
-            <NavLink href="/">Tienda</NavLink>
-            <NavLink href="/">Contacto</NavLink>
+            <NavLink href="/tienda">Tienda</NavLink>
+            <NavLink href="/contact">Contacto</NavLink>
           </nav>
 
           {/* Right section: search, cart, user */}
           <div className="flex items-center space-x-1 md:space-x-2">
-          
-
-           
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-beige-700 hover:text-beige-800 hover:bg-beige-200/50 relative"
-              aria-label="Carrito"
-            >
-              <ShoppingBag size={20} />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-beige-800 text-beige-50 rounded-full text-xs flex items-center justify-center">
-                0
-              </span>
-            </Button>
+            <CartIcon />
 
             {user ? (
               <DropdownMenu>
@@ -99,11 +103,16 @@ export default function Navbar({ user }: NavbarProps) {
                     size="sm"
                     className="text-beige-700 hover:text-beige-800 hover:bg-beige-200/50 gap-1"
                   >
-                    <span className="hidden sm:inline-block max-w-[100px] truncate">{user.email?.split("@")[0]}</span>
+                    <span className="hidden sm:inline-block max-w-[100px] truncate">
+                      {user.email?.split("@")[0]}
+                    </span>
                     <ChevronDown size={16} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-beige-50 border-beige-200">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 bg-beige-50 border-beige-200"
+                >
                   <div className="px-3 py-2 text-sm font-medium text-beige-800 border-b border-beige-100">
                     <p className="truncate">{user.email}</p>
                   </div>
@@ -114,15 +123,6 @@ export default function Navbar({ user }: NavbarProps) {
                     >
                       <User className="mr-2 h-4 w-4" />
                       <span>Mi Perfil</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/orders"
-                      className="cursor-pointer text-beige-700 focus:text-beige-800 focus:bg-beige-100"
-                    >
-                      <ShoppingBag className="mr-2 h-4 w-4" />
-                      <span>Mis Pedidos</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-beige-100" />
@@ -149,7 +149,10 @@ export default function Navbar({ user }: NavbarProps) {
                 >
                   <Link href="/sign-in">Iniciar Sesión</Link>
                 </Button>
-                <Button asChild className="bg-beige-700 hover:bg-beige-800 text-beige-50">
+                <Button
+                  asChild
+                  className="bg-beige-700 hover:bg-beige-800 text-beige-50"
+                >
                   <Link href="/sign-up">Registrarse</Link>
                 </Button>
               </div>
@@ -172,17 +175,26 @@ export default function Navbar({ user }: NavbarProps) {
               <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>
                 Nosotros
               </MobileNavLink>
-              <MobileNavLink href="/contact" onClick={() => setIsMenuOpen(false)}>
+              <MobileNavLink
+                href="/contact"
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Contacto
               </MobileNavLink>
 
               {!user && (
                 <>
                   <div className="h-px bg-beige-200 my-2"></div>
-                  <MobileNavLink href="/sign-in" onClick={() => setIsMenuOpen(false)}>
+                  <MobileNavLink
+                    href="/sign-in"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
                     Iniciar Sesión
                   </MobileNavLink>
-                  <MobileNavLink href="/sign-up" onClick={() => setIsMenuOpen(false)}>
+                  <MobileNavLink
+                    href="/sign-up"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
                     Registrarse
                   </MobileNavLink>
                 </>
@@ -194,13 +206,12 @@ export default function Navbar({ user }: NavbarProps) {
                   <div className="px-3 py-2 text-sm font-medium text-beige-800">
                     <p className="truncate">{user.email}</p>
                   </div>
-                  <MobileNavLink href="/perfil" onClick={() => setIsMenuOpen(false)}>
+                  <MobileNavLink
+                    href="/perfil"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
                     <User className="mr-2 h-4 w-4" />
                     Mi Perfil
-                  </MobileNavLink>
-                  <MobileNavLink href="/orders" onClick={() => setIsMenuOpen(false)}>
-                    <ShoppingBag className="mr-2 h-4 w-4" />
-                    Mis Pedidos
                   </MobileNavLink>
                   <form action={signOutAction} className="w-full">
                     <button
@@ -219,11 +230,17 @@ export default function Navbar({ user }: NavbarProps) {
         </div>
       )}
     </header>
-  )
+  );
 }
 
 // Desktop navigation link
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+function NavLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       href={href}
@@ -231,7 +248,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
     >
       {children}
     </Link>
-  )
+  );
 }
 
 // Mobile navigation link
@@ -240,9 +257,9 @@ function MobileNavLink({
   children,
   onClick,
 }: {
-  href: string
-  children: React.ReactNode
-  onClick?: () => void
+  href: string;
+  children: React.ReactNode;
+  onClick?: () => void;
 }) {
   return (
     <Link
@@ -252,6 +269,5 @@ function MobileNavLink({
     >
       {children}
     </Link>
-  )
+  );
 }
-

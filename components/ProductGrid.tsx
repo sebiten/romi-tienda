@@ -1,182 +1,115 @@
-import Link from "next/link";
-import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
-import type { Product } from "@/lib/types";
-import TitleUsable from "@/components/Title";
-import { getCategoryNameById } from "@/utils/getCategoryNameById";
+"use client"
+
+import { useEffect } from "react"
+import { ProductCard } from "@/components/ProductCard"
+import { Loader2 } from "lucide-react"
+import TitleUsable from "@/components/Title"
+import { createClient } from "@/utils/supabase/client"
+import { useState } from "react"
+import { useCartStore } from "@/app/store/cartStore"
 
 interface ProductGridProps {
-  products: Product[] | null;
+  getCategoryNameById?: (id: string) => string
+  title?: string
+  limit?: number
 }
 
-export function ProductGrid({ products }: ProductGridProps) {
-  if (!products || products.length === 0) {
+export function ProductGrid({ title = "Productos", limit }: ProductGridProps) {
+  const { products, isLoadingProducts, error, fetchProducts } = useCartStore()
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true)
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
+
+  // Fetch categories from Supabase
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        setIsLoadingCategories(true)
+        const supabase = createClient()
+        const { data, error } = await supabase.from("categories").select("id, name")
+
+        if (error) {
+          console.error("Error fetching categories:", error)
+          return
+        }
+
+        setCategories(data || [])
+      } catch (err) {
+        console.error("Error in fetchCategories:", err)
+      } finally {
+        setIsLoadingCategories(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
+
+  // Helper function to get category name by ID
+  function getCategoryNameById(id: string) {
+    const category = categories.find((cat) => cat.id === id)
+    return category ? category.name : "Categoría desconocida"
+  }
+
+  // Limit the number of products if specified
+  const displayProducts = limit ? products.slice(0, limit) : products
+
+  if (isLoadingProducts || isLoadingCategories) {
     return (
-      <section className="py-12 px-4 md:px-6 bg-beige-50">
-        <div className="container mx-auto text-center">
-          <TitleUsable title="Productos" />
-          <p className="text-beige-600 mt-4">
-            No hay productos disponibles en este momento.
-          </p>
+      <section className="py-16 px-4 md:px-6 bg-beige-50">
+        <div className="container mx-auto">
+          <div className="mb-12 text-center">
+            <TitleUsable title={title} />
+            <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-beige-500 to-transparent mx-auto mt-4"></div>
+          </div>
+
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="w-10 h-10 text-beige-500 animate-spin" />
+          </div>
         </div>
       </section>
-    );
+    )
   }
+
+  if (error) {
+    return (
+      <section className="py-16 px-4 md:px-6 bg-beige-50">
+        <div className="container mx-auto text-center">
+          <TitleUsable title={title} />
+          <p className="text-beige-600 mt-4">{error}</p>
+        </div>
+      </section>
+    )
+  }
+
+  if (!products || products.length === 0) {
+    return (
+      <section className="py-16 px-4 md:px-6 bg-beige-50">
+        <div className="container mx-auto text-center">
+          <TitleUsable title={title} />
+          <p className="text-beige-600 mt-4">No hay productos disponibles en este momento.</p>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="py-16 px-4 md:px-6 bg-beige-50">
       <div className="container mx-auto">
         <div className="mb-12 text-center">
-        <h2 className="font-serif text-xl md:text-4xl font-light tracking-wider mb-6 text-[#5D4B3C] animate-fade-in">
-          <span className="inline-block animate-slide-up">Productos</span>
-          {/* <span className="inline-block mx-2 md:mx-4 animate-slide-up animation-delay-150">Lucia</span> */}
-        </h2>
+          <TitleUsable title={title} />
           <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-beige-500 to-transparent mx-auto mt-4"></div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {products.map((product) => (
-            <Link
-              href={`/producto/${product.id}`}
-              key={product.id}
-              className="group block h-full transition-all duration-300 hover:translate-y-[-4px]"
-            >
-              <Card className="h-full overflow-hidden border-beige-200 bg-white/90 backdrop-blur-sm hover:shadow-[0_15px_30px_rgba(166,150,129,0.1)] transition-all duration-300">
-                <div className="aspect-square relative overflow-hidden">
-                  {product.images && product.images.length > 0 ? (
-                    <div className="h-full w-full relative">
-                      <Image
-                        src={product.images[0] || "/placeholder.svg"}
-                        alt={product.title || "Producto"}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-full w-full bg-beige-100 flex items-center justify-center">
-                      <span className="text-beige-600">Sin imagen</span>
-                    </div>
-                  )}
-
-                  {product.stock !== undefined &&
-                    product.stock! <= 5 &&
-                    product.stock! > 0 && (
-                      <Badge className="absolute top-2 right-2 bg-beige-800 text-beige-50 hover:bg-beige-700">
-                        ¡Últimas unidades!
-                      </Badge>
-                    )}
-
-                  {product.stock === 0 && (
-                    <div className="absolute inset-0 bg-beige-50/80 backdrop-blur-sm flex items-center justify-center">
-                      <Badge
-                        variant="outline"
-                        className="text-lg font-serif font-light border-beige-300 text-beige-800"
-                      >
-                        Agotado
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-
-                <CardHeader className="p-4 pb-2">
-                  <div className="flex justify-between items-start gap-2">
-                    <h3 className="font-serif text-lg text-beige-800 line-clamp-2">
-                      {product.title}
-                    </h3>
-                    <span className="font-bold text-lg whitespace-nowrap text-beige-700">
-                      $
-                      {typeof product.price === "number"
-                        ? product.price.toLocaleString("es-MX")
-                        : (product.price ?? 0)}
-                    </span>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="p-4 pt-0">
-                  <p className="text-sm text-beige-600 line-clamp-2 mb-2">
-                    {product.description}
-                  </p>
-
-                  <Badge
-                    variant="secondary"
-                    className="mt-1 bg-beige-100 text-beige-700 hover:bg-beige-200"
-                  >
-                    {getCategoryNameById(product.category_id)}
-                  </Badge>
-                </CardContent>
-
-                <CardFooter className="p-4 pt-0 flex flex-col items-start gap-1">
-                  {product.sizes && product.sizes.length > 0 && (
-                    <div className="flex flex-wrap gap-1 w-full">
-                      <span className="text-xs text-beige-600">Tallas:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {product.sizes.map((size) => (
-                          <Badge
-                            key={size}
-                            variant="outline"
-                            className="text-xs border-beige-200 text-beige-700"
-                          >
-                            {size}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {product.colors && product.colors.length > 0 && (
-                    <div className="flex flex-wrap gap-1 w-full">
-                      <span className="text-xs text-beige-600">Colores:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {product.colors.map((color) => (
-                          <Badge
-                            key={color}
-                            variant="outline"
-                            className="text-xs border-beige-200 text-beige-700"
-                          >
-                            {color}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {product.stock !== undefined && (
-                    <div className="w-full mt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-beige-600">
-                          Disponibilidad:
-                        </span>
-                        <span className="text-xs font-medium text-beige-700">
-                          {product.stock! > 0
-                            ? `${product.stock} en stock`
-                            : "Sin stock"}
-                        </span>
-                      </div>
-                      <div className="w-full bg-beige-100 h-1.5 rounded-full mt-1 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${
-                            product.stock === 0
-                              ? "bg-beige-300/70 w-0"
-                              : product.stock! <= 5
-                                ? "bg-beige-500 w-1/4"
-                                : "bg-beige-600 w-full"
-                          }`}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </CardFooter>
-              </Card>
-            </Link>
+          {displayProducts.map((product) => (
+            <ProductCard key={product.id} product={product} getCategoryNameById={getCategoryNameById} />
           ))}
         </div>
       </div>
     </section>
-  );
+  )
 }
+
