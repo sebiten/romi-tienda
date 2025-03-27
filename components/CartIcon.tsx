@@ -17,7 +17,7 @@ export function CartIcon() {
       aria-label={`Carrito con ${itemCount} artículos`}
       asChild
     >
-      <Link href="/cart">
+      <Link href="/carrito">
         <ShoppingBag size={20} />
         {itemCount > 0 && (
           <span className="absolute -top-1 -right-1 w-4 h-4 bg-beige-800 text-beige-50 rounded-full text-xs flex items-center justify-center">
