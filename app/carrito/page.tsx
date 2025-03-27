@@ -239,7 +239,7 @@ export default function CartPage() {
                   </li>
                   <li className="flex items-start">
                     <span className="mr-2">•</span>
-                    <span>Envío gratis en pedidos superiores a $999 MXN</span>
+                    <span>Envío gratis en pedidos superiores a $999 ARG</span>
                   </li>
                   <li className="flex items-start">
                     <span className="mr-2">•</span>

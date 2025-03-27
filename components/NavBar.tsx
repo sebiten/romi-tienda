@@ -53,7 +53,7 @@ export default function Navbar({ user }: NavbarProps) {
     >
       {/* Top announcement bar */}
       <div className="bg-beige-800 text-beige-50 py-1.5 text-center text-xs md:text-sm font-light">
-        <p>Envío gratis en pedidos superiores a $999 MXN</p>
+        <p>Envío gratis en pedidos superiores a $999 ARG</p>
       </div>
 
       <div className="container mx-auto px-4">

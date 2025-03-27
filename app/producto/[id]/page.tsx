@@ -245,7 +245,7 @@ export default function ProductPage() {
             {/* Additional information */}
             <Card className="bg-beige-100/50 border-beige-200 p-4">
               <div className="text-sm text-beige-700 space-y-2">
-                <p>• Envío gratuito en pedidos superiores a $999 MXN</p>
+                <p>• Envío gratuito en pedidos superiores a $999 ARG</p>
                 <p>• Devoluciones gratuitas dentro de los 30 días</p>
                 <p>• Garantía de calidad en todos nuestros productos</p>
               </div>
