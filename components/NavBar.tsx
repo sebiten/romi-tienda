@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -88,7 +87,6 @@ export default function Navbar({ user }: NavbarProps) {
           <nav className="hidden md:flex items-center space-x-1">
             <NavLink href="/">Inicio</NavLink>
             <NavLink href="/tienda">Tienda</NavLink>
-            <NavLink href="/contact">Contacto</NavLink>
           </nav>
 
           {/* Right section: search, cart, user */}

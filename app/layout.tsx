@@ -4,7 +4,6 @@ import { Playfair_Display } from "next/font/google";
 
 import Footer from "@/components/Footer";
 import { createClient } from "@/utils/supabase/server";
-import { ThemeProvider } from "next-themes";
 import Navbar from "@/components/NavBar";
 
 const playfair = Playfair_Display({
@@ -26,16 +25,9 @@ export default async function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${playfair.variable} font-sans antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Navbar user={user} />
-          <main> {children}</main>
-          <Footer />
-        </ThemeProvider>
+        <Navbar user={user} />
+        <main> {children}</main>
+        <Footer />
       </body>
     </html>
   );
