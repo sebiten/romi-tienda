@@ -33,7 +33,7 @@ export default async function Login(props: { searchParams: Promise<Message> }) {
           name="password"
           placeholder="Your password"
           required
-        />
+        /> 
         <SubmitButton pendingText="Signing In..." formAction={signInAction}>
           Sign in
         </SubmitButton>
