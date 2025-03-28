@@ -25,7 +25,7 @@ export default async function AdminLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return redirect("/sign-in?redirect=/admin");
+    return redirect("/sign-in");
   }
 
   // Verificar si el usuario es administrador
@@ -36,7 +36,7 @@ export default async function AdminLayout({
     .single();
 
   if (error || !profile || !profile.isadmin) {
-    return redirect("/acceso-denegado");
+    return redirect("/");
   }
 
   return (
@@ -60,7 +60,7 @@ export default async function AdminLayout({
             </Link>
           </Button>
 
-          <Button
+          {/* <Button
             asChild
             variant="ghost"
             className="w-full justify-start text-beige-700 hover:text-beige-800 hover:bg-beige-100"
@@ -69,7 +69,7 @@ export default async function AdminLayout({
               <Package className="w-4 h-4 mr-2" />
               <span>Pedidos</span>
             </Link>
-          </Button>
+          </Button> */}
 
           <Button
             asChild

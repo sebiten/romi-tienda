@@ -1,51 +1,67 @@
-import type React from "react"
-import { createClient } from "@/utils/supabase/server"
-import { redirect } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, Users, ShoppingBag, CreditCard } from "lucide-react"
-import Link from "next/link"
+import type React from "react";
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Package, Users, ShoppingBag, CreditCard } from "lucide-react";
+import Link from "next/link";
+import { CartItem, OrderItem } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+
+// Add this helper function to calculate the total
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   // Verificar si el usuario está autenticado
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
   if (!user) {
-    return redirect("/sign-in?redirect=/admin")
+    return redirect("/sign-in?redirect=/admin");
   }
 
   // Verificar si el usuario es administrador
-  const { data: profile, error } = await supabase.from("profiles").select("isadmin").eq("id", user.id).single()
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("isadmin")
+    .eq("id", user.id)
+    .single();
 
   if (error || !profile || !profile.isadmin) {
-    return redirect("/acceso-denegado")
+    return redirect("/acceso-denegado");
   }
 
   // Obtener estadísticas básicas
   const { data: pendingOrders } = await supabase
     .from("orders")
     .select("id", { count: "exact" })
-    .eq("status", "pendiente")
+    .eq("status", "pendiente");
 
-  const { data: totalUsers } = await supabase.from("profiles").select("id", { count: "exact" })
+  const { data: totalUsers } = await supabase
+    .from("profiles")
+    .select("id", { count: "exact" });
 
-  const { data: totalProducts } = await supabase.from("products").select("id", { count: "exact" })
+  const { data: totalProducts } = await supabase
+    .from("products")
+    .select("id", { count: "exact" });
 
   const { data: recentOrders } = await supabase
     .from("orders")
     .select("*")
     .order("created_at", { ascending: false })
-    .limit(5)
+    .limit(5);
 
   return (
     <main className="bg-beige-50 min-h-screen py-12 px-4">
       <div className="container mx-auto max-w-7xl">
         <div className="mb-8">
-          <h1 className="font-serif text-3xl md:text-4xl text-beige-800 mb-2">Dashboard</h1>
-          <p className="text-beige-600">Bienvenido al panel de administración</p>
+          <h1 className="font-serif text-3xl md:text-4xl text-beige-800 mb-2">
+            Dashboard
+          </h1>
+          <p className="text-beige-600">
+            Bienvenido al panel de administración
+          </p>
         </div>
 
         {/* Stats cards */}
@@ -82,39 +98,74 @@ export default async function AdminDashboardPage() {
         {/* Recent orders */}
         <Card className="bg-white border-beige-200 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xl text-beige-800">Pedidos Recientes</CardTitle>
+            <CardTitle className="text-xl text-beige-800">
+              Pedidos Recientes
+            </CardTitle>
           </CardHeader>
 
           <CardContent>
             {recentOrders && recentOrders.length > 0 ? (
               <div className="divide-y divide-beige-100">
-                {recentOrders.map((order) => (
-                  <div key={order.id} className="py-3 flex justify-between items-center">
-                    <div>
-                      <p className="font-medium text-beige-800">Pedido #{order.id.slice(-6)}</p>
-                      <p className="text-sm text-beige-600">{order.customer_name}</p>
+                {recentOrders.map((order: any) => (
+                  <div key={order.id} className="py-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-beige-800">
+                            Pedido #{order.id.slice(-6)}
+                          </p>
+                          <span
+                            className={`px-2 py-0.5 text-xs rounded-full ${
+                              order.status === "pendiente-pago"
+                                ? "bg-amber-100 text-amber-800"
+                                : order.status === "completado"
+                                  ? "bg-green-100 text-green-800"
+                                  : order.status === "cancelado"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {order.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-beige-600">
+                          {new Date(order.created_at).toLocaleDateString(
+                            "es-AR",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium text-beige-800">${order.total}</p>
-                      {/* <p className="text-xs text-beige-600">{new Date(order.created_at).toLocaleDateString("es-AR")}</p> */}
-                    </div>
+                    <Button className="flex justify-between items-center">
+                      <Link
+                        href={`/admin/pedidos/${order.id}`}
+                        className="text-xs text-beige-800 underline hover:text-beige-600"
+                      >
+                        Ver detalles completos
+                      </Link>
+                    
+                    </Button>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-center py-6 text-beige-600">No hay pedidos recientes</p>
+              <p className="text-center py-6 text-beige-600">
+                No hay pedidos recientes
+              </p>
             )}
-
-            <div className="mt-4 text-center">
-              <Link href="/admin/pedidos" className="text-sm text-beige-700 hover:text-beige-800 hover:underline">
-                Ver todos los pedidos
-              </Link>
-            </div>
           </CardContent>
         </Card>
       </div>
     </main>
-  )
+  );
 }
 
 function StatsCard({
@@ -123,10 +174,10 @@ function StatsCard({
   icon,
   href,
 }: {
-  title: string
-  value: number | string
-  icon: React.ReactNode
-  href: string
+  title: string;
+  value: number | string;
+  icon: React.ReactNode;
+  href: string;
 }) {
   return (
     <Link href={href}>
@@ -142,6 +193,19 @@ function StatsCard({
         </CardContent>
       </Card>
     </Link>
-  )
+  );
 }
 
+// Add this helper function to calculate the total
+function calculateOrderTotal(order: Order): string {
+  if (!order.items || order.items.length === 0) return "0.00";
+
+  return order.items
+    .reduce((total, item) => {
+      const itemPrice =
+        item.price ||
+        (item.product?.price ? item.product.price * item.quantity : 0);
+      return total + (itemPrice || 0);
+    }, 0)
+    .toFixed(2);
+}

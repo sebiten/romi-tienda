@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from 'lucide-react';
+import { Order } from "@/app/types";
 
 export default async function OrderDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createClient();
@@ -20,7 +21,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
       )
     `)
     .eq("id", params.id)
-    .single();
+    .single() as { data: Order | null, error: any };
 
   if (error || !order) {
     return notFound();
@@ -77,7 +78,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                           <div className="h-16 w-16 rounded-md overflow-hidden bg-beige-100 flex-shrink-0">
                             <img 
                               src={item.product.image_url || "/placeholder.svg"} 
-                              alt={item.product.name} 
+                              alt={item.product.name || 'Producto'}
                               className="h-full w-full object-cover"
                             />
                           </div>
@@ -94,7 +95,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-beige-800">
-                            ${(item.price || (item.product?.price * item.quantity) || 0).toFixed(2)}
+                            ${(item.price || (item.product?.price ? item.product.price * item.quantity : 0) || 0).toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -113,12 +114,12 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                   </div>
                   <div className="flex justify-between py-2">
                     <p className="text-beige-600">Envío</p>
-                    <p className="font-medium text-beige-800">${order.shipping_cost || '0.00'}</p>
+                    <p className="font-medium text-beige-800">${order.shipping_cost?.toFixed(2) || '0.00'}</p>
                   </div>
                   <div className="flex justify-between py-2 text-lg">
                     <p className="font-medium text-beige-800">Total</p>
                     <p className="font-bold text-beige-800">
-                      ${(parseFloat(calculateOrderTotal(order)) + parseFloat(order.shipping_cost || '0')).toFixed(2)}
+                      ${(parseFloat(calculateOrderTotal(order)) + (order.shipping_cost || 0)).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -212,11 +213,11 @@ export default async function OrderDetailPage({ params }: { params: { id: string
 }
 
 // Helper function to calculate order total
-function calculateOrderTotal(order) {
+function calculateOrderTotal(order: Order): string {
   if (!order.items || order.items.length === 0) return '0.00';
   
   return order.items.reduce((total, item) => {
-    const itemPrice = item.price || (item.product?.price * item.quantity) || 0;
-    return total + parseFloat(itemPrice);
+    const itemPrice = item.price || (item.product?.price ? item.product.price * item.quantity : 0);
+    return total + (itemPrice || 0);
   }, 0).toFixed(2);
 }

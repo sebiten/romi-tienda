@@ -153,13 +153,14 @@ export default function AdminOrdersPanel() {
         .eq("order_id", order.id);
 
       if (itemsError) throw itemsError;
+      console.log(items);
 
       // Formatear los items con la información del producto
       const formattedItems = items.map((item) => ({
         ...item,
         product_title: item.products?.title || "Producto no disponible",
-        product_size: item.size || "N/A",
-        product_color: item.color || "N/A",
+        product_size: item.products?.sizes || "N/A",
+        product_color: item.products?.colors || "N/A",
       }));
 
       setSelectedOrder({
@@ -348,6 +349,7 @@ export default function AdminOrdersPanel() {
       </div>
     );
   }
+  console.log(filteredOrders);
 
   if (error) {
     return (
@@ -410,12 +412,6 @@ export default function AdminOrdersPanel() {
                 Pendientes
               </TabsTrigger>
               <TabsTrigger
-                value="procesando"
-                className="py-2 px-4 data-[state=active]:bg-white data-[state=active]:text-beige-800 data-[state=active]:shadow-none rounded-none border-b-2 border-transparent data-[state=active]:border-beige-700"
-              >
-                En proceso
-              </TabsTrigger>
-              <TabsTrigger
                 value="completado"
                 className="py-2 px-4 data-[state=active]:bg-white data-[state=active]:text-beige-800 data-[state=active]:shadow-none rounded-none border-b-2 border-transparent data-[state=active]:border-beige-700"
               >
@@ -424,6 +420,7 @@ export default function AdminOrdersPanel() {
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-0">
+              
               {filteredOrders.length === 0 ? (
                 <div className="text-center py-12 bg-beige-50/50 rounded-lg border border-beige-100">
                   <Package className="w-12 h-12 text-beige-300 mx-auto mb-4" />
@@ -465,17 +462,15 @@ export default function AdminOrdersPanel() {
                           </TableCell>
                           <TableCell>
                             <div>
-                              <div className="font-medium">
-                                {order.customer_name}
-                              </div>
+                              <div className="font-medium">{order.user_id}</div>
                               <div className="text-sm text-beige-600">
-                                {order.customer_email}
+                                {order.payment_status}
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>{formatDate(order.created_at)}</TableCell>
                           <TableCell>
-                            ${order.total.toLocaleString("es-MX")}
+                            ${order.total.toLocaleString("es-AR")}
                           </TableCell>
                           <TableCell>
                             {renderStatusBadge(order.status)}
