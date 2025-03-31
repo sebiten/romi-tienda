@@ -1,0 +1,24 @@
+// Tareas pendientes:
+
+    // 1. Obtener el ID del usuario:
+    //    - Utilizar este ID para asociar el pedido al carrito. ✅
+
+    // 2. Subir la orden a la base de datos:
+     //    - Verificar que la orden se guarde correctamente, que se relacione con el usuario y las dos tablas de orders orders_items. ✅
+
+    // 3. Gestión de pedidos:
+    //    - Mostrar los pedidos en un panel de pedidos. ✅
+
+    // 4. Panel de administración:
+    //    - Desarrollar un panel para que el admin pueda confirmar los pedidos. ✅
+    //    - Permitir al admin ver los pedidos pendientes y confirmados.✅
+    //    - agregamos el telefono y nombre al registrarse para tener un control mejor de la persona que compra.✅
+    //    - Implementar la funcionalidad de marcar un pedido como confirmado.
+    //      nos queda realizar el editar pedido
+    //      nos queda realizar el envio por correo o whatsapp
+    //      falta marcar como completado y una vez confirmado se tiene que descontar el stock
+
+
+
+
+

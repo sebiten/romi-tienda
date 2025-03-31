@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Users, ShoppingBag, CreditCard } from "lucide-react";
 import Link from "next/link";
-import { CartItem, OrderItem } from "@/lib/types";
+import { CartItem, Order, OrderItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 
 // Add this helper function to calculate the total
@@ -106,7 +106,7 @@ export default async function AdminDashboardPage() {
           <CardContent>
             {recentOrders && recentOrders.length > 0 ? (
               <div className="divide-y divide-beige-100">
-                {recentOrders.map((order: any) => (
+                {recentOrders.map((order: Order) => (
                   <div key={order.id} className="py-4">
                     <div className="flex justify-between items-start mb-3">
                       <div>
@@ -128,6 +128,14 @@ export default async function AdminDashboardPage() {
                             {order.status}
                           </span>
                         </div>
+                        {order.profiles && (
+                          <p className="text-sm text-beige-600 mt-1">
+                            Cliente:{" "}
+                            {order.profiles.first_name ||
+                              order.profiles.email ||
+                              "Usuario " + order.user_id.slice(-6)}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-beige-600">
@@ -144,6 +152,38 @@ export default async function AdminDashboardPage() {
                         </p>
                       </div>
                     </div>
+
+                    {/* Order Items */}
+                    {order.items && order.items.length > 0 && (
+                      <div className="bg-beige-50 rounded-md p-3 mb-3">
+                        <p className="text-sm font-medium text-beige-700 mb-2">
+                          Productos:
+                        </p>
+                        <div className="space-y-2">
+                          {order.items.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex justify-between text-sm"
+                            >
+                              <div>
+                                <span className="text-beige-800">
+                                  {item.product?.title ||
+                                    "Producto " + item.product_id.slice(-6)}
+                                </span>
+                                <span className="text-beige-600 ml-2">
+                                  {item.quantity}x {item.size}{" "}
+                                  {item.color && `- ${item.color}`}
+                                </span>
+                              </div>
+                              <span className="font-medium text-beige-800">
+                                ${item.product?.price || "—"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <Button className="flex justify-between items-center">
                       <Link
                         href={`/admin/pedidos/${order.id}`}

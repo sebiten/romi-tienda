@@ -77,6 +77,8 @@ export async function deleteProductAction(formData: FormData): Promise<void> {
   revalidatePath("/admin/delete");
 }
 
+// Esta función crea una orden en la base de datos y envía un mensaje de WhatsApp
+// a un número específico. Se asume que el número de teléfono ya está en formato internacional.
 export async function createOrderAction(
   props: SendWhatsAppProps
 ): Promise<string> {
@@ -106,10 +108,6 @@ export async function createOrderAction(
     let { productId, quantity, size, color } = item;
     // Extraer el UUID asumiendo que está separado por guiones bajos
     const uuid = productId.split("_")[0];
-
-    console.log(
-      `Insertando item: UUID=${uuid}, Cantidad: ${quantity}, Tamaño: ${size}, Color: ${color}`
-    );
 
     const { error: itemError } = await supabase.from("order_items").insert({
       order_id: order.id,
