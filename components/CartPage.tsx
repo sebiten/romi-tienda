@@ -74,8 +74,8 @@ export default function CartPage({ user }: { user: User | null }) {
         .join("\n");
 
       const message = encodeURIComponent(
-        `Nuevo pedido\nID: ${orderId}\n\nDetalles:\n${orderDetails}\n\nTotal: $${total.toLocaleString(
-          "es-MX"
+        `Hola! Me gustaria hacer este pedido 😊\nID: ${orderId}\n\nDetalles:\n${orderDetails}\n\nTotal: $${total.toLocaleString(
+          "es-AR"
         )}`
       );
 
@@ -83,7 +83,7 @@ export default function CartPage({ user }: { user: User | null }) {
       const whatsappUrl = `https://wa.me/${ownerPhone}?text=${message}`;
 
       // Abre WhatsApp en una nueva pestaña
-      window.open(whatsappUrl, "_blank");
+      window.open(whatsappUrl);
 
       alert(`Pedido creado con ID: ${orderId}. Se envió un WhatsApp al dueño.`);
       // Limpia el carrito y redirige
@@ -167,11 +167,11 @@ export default function CartPage({ user }: { user: User | null }) {
                                 {item.originalPrice > item.price && (
                                   <span className="text-sm line-through text-beige-500 mr-2">
                                     $
-                                    {item.originalPrice.toLocaleString("es-MX")}
+                                    {item.originalPrice.toLocaleString("es-AR")}
                                   </span>
                                 )}
                                 <span className="font-medium text-beige-800">
-                                  ${item.price.toLocaleString("es-MX")}
+                                  ${item.price.toLocaleString("es-AR")}
                                 </span>
                               </div>
                             </div>
@@ -207,11 +207,11 @@ export default function CartPage({ user }: { user: User | null }) {
                                 {item.originalPrice > item.price && (
                                   <span className="text-sm line-through text-beige-500">
                                     $
-                                    {item.originalPrice.toLocaleString("es-MX")}
+                                    {item.originalPrice.toLocaleString("es-AR")}
                                   </span>
                                 )}
                                 <span className="font-medium text-beige-800">
-                                  ${item.price.toLocaleString("es-MX")}
+                                  ${item.price.toLocaleString("es-AR")}
                                 </span>
                               </div>
 
@@ -285,14 +285,14 @@ export default function CartPage({ user }: { user: User | null }) {
                   <div className="space-y-2 text-beige-800">
                     <div className="flex justify-between">
                       <span className="text-beige-600">Subtotal</span>
-                      <span>${subtotal.toLocaleString("es-MX")}</span>
+                      <span>${subtotal.toLocaleString("es-AR")}</span>
                     </div>
 
                     {discount > 0 && (
                       <div className="flex justify-between">
                         <span className="text-beige-600">Descuento</span>
                         <span className="text-green-600">
-                          -${discount.toLocaleString("es-MX")}
+                          -${discount.toLocaleString("es-AR")}
                         </span>
                       </div>
                     )}
@@ -302,7 +302,7 @@ export default function CartPage({ user }: { user: User | null }) {
                       {shipping === 0 ? (
                         <span className="text-green-600">Gratis</span>
                       ) : (
-                        <span>${shipping.toLocaleString("es-MX")}</span>
+                        <span>${shipping.toLocaleString("es-AR")}</span>
                       )}
                     </div>
 
@@ -310,7 +310,7 @@ export default function CartPage({ user }: { user: User | null }) {
 
                     <div className="flex justify-between font-medium text-lg">
                       <span>Total</span>
-                      <span>${total.toLocaleString("es-MX")}</span>
+                      <span>${total.toLocaleString("es-AR")}</span>
                     </div>
 
                     {shipping === 0 && (
@@ -321,7 +321,7 @@ export default function CartPage({ user }: { user: User | null }) {
 
                     {shipping > 0 && (
                       <div className="text-sm text-center mt-2 text-beige-600">
-                        Te faltan ${(1000 - subtotal).toLocaleString("es-MX")}{" "}
+                        Te faltan ${(1000 - subtotal).toLocaleString("es-AR")}{" "}
                         para obtener envío gratis.
                       </div>
                     )}
