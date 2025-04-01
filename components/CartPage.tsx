@@ -47,8 +47,11 @@ export default function CartPage({ user }: { user: User | null }) {
 
   async function handleSendWhatsApp() {
     try {
+      // Abre la ventana de inmediato para evitar bloqueos en móviles
+      const newWindow = window.open("about:blank");
+  
       setLoading(true);
-
+  
       // Mapea los items del carrito a la estructura que espera createOrderAction
       const cartItems = items.map((item) => ({
         productId: item.id,
@@ -57,14 +60,14 @@ export default function CartPage({ user }: { user: User | null }) {
         color: item.color,
         price: item.price,
       }));
-
+  
       // Crea el pedido y obtiene un orderId
       const orderId = await createOrderAction({
         userId: userId,
         items: cartItems,
         phoneNumber: ownerPhone,
       });
-
+  
       // Construye el mensaje para WhatsApp con los detalles del pedido
       const orderDetails = items
         .map(
@@ -72,21 +75,25 @@ export default function CartPage({ user }: { user: User | null }) {
             `${item.name} - Talla: ${item.size}, Color: ${item.color}, Cantidad: ${item.quantity}`
         )
         .join("\n");
-
+  
       const message = encodeURIComponent(
         `Hola! Me gustaria hacer este pedido 😊\nID: ${orderId}\n\nDetalles:\n${orderDetails}\n\nTotal: $${total.toLocaleString(
           "es-AR"
         )}`
       );
-
+  
       // URL de WhatsApp (nota: se debe eliminar el "+" en el número)
       const whatsappUrl = `https://wa.me/${ownerPhone}?text=${message}`;
-
-      // Abre WhatsApp en una nueva pestaña
-      window.open(whatsappUrl);
-
+  
+      // Actualiza la URL de la ventana que abrimos
+      if (newWindow) {
+        newWindow.location.href = whatsappUrl;
+      } else {
+        // Si falla la apertura de la ventana, redirige la ventana actual
+        window.location.href = whatsappUrl;
+      }
+  
       alert(`Pedido creado con ID: ${orderId}. Se envió un WhatsApp al dueño.`);
-      // Limpia el carrito y redirige
       clearCart();
       router.push("/perfil");
     } catch (err: any) {
@@ -95,6 +102,7 @@ export default function CartPage({ user }: { user: User | null }) {
       setLoading(false);
     }
   }
+  
 
   // Calcular totales al montar el componente y cuando cambien los items
   useEffect(() => {

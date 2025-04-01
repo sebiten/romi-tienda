@@ -23,7 +23,7 @@ export default function Hero() {
       <div className="relative z-10 w-full max-w-5xl mx-auto px-6 py-16 flex flex-col items-center">
         {/* Animated circular image */}
         <div className="relative mb-8 group">
-          <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-[#D6C7B0] via-[#A69681] to-[#D6C7B0] opacity-75 blur group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-gradient-xy"></div>
+          <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-[#D6C7B0]  to-[#D6C7B0]  group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-gradient-xy"></div>
           <div className="relative w-40 h-40 md:w-60 md:h-60 rounded-full overflow-hidden border-4 border-[#F5F1EA]/80 shadow-[0_0_40px_rgba(214,199,176,0.5)] animate-float">
             <Image
               src="/almalucia.webp"
