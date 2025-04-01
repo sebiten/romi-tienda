@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 interface CartItem {
@@ -124,4 +125,39 @@ export async function createOrderAction(
   // 4) Enviar WhatsApp (opcional) y 5) Revalida la página si lo requieres
 
   return order.id;
+}
+
+// action para editar un producto 
+export async function updateProductAction(formData: FormData) {
+  "use server";
+
+  const id = formData.get("id") as string;
+  const title = formData.get("title") as string;
+  const price = parseFloat(formData.get("price") as string);
+  const stock = parseInt(formData.get("stock") as string, 10);
+  const sizesRaw = formData.get("sizes") as string;
+  const sizes = sizesRaw.split(",").map((size) => size.trim());
+  const category_id = formData.get("category_id") as string; // Obtener el id de la categoría
+
+  const supabase = await createClient();
+
+  // Actualizar el producto en la tabla "products" incluyendo la categoría
+  const { error } = await supabase
+    .from("products")
+    .update({
+      title,
+      price,
+      stock,
+      sizes,
+      category_id: category_id || null, // asigna null si no se seleccionó una categoría
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error actualizando el producto:", error.message);
+    // Aquí podrías manejar el error de forma más amigable (mostrar mensaje en UI, etc.)
+  }
+
+  // Redirigir después de la actualización
+  redirect("/admin/edit");
 }

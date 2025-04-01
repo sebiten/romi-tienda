@@ -13,9 +13,9 @@
     //    - Desarrollar un panel para que el admin pueda confirmar los pedidos. ✅
     //    - Permitir al admin ver los pedidos pendientes y confirmados.✅
     //    - agregamos el telefono y nombre al registrarse para tener un control mejor de la persona que compra.✅
+    //      nos queda realizar el editar pedido ✅
+    //      nos queda realizar el envio por correo o whatsapp o correo
     //    - Implementar la funcionalidad de marcar un pedido como confirmado.
-    //      nos queda realizar el editar pedido
-    //      nos queda realizar el envio por correo o whatsapp
     //      falta marcar como completado y una vez confirmado se tiene que descontar el stock
 
 

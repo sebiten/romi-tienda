@@ -42,14 +42,14 @@ export default function CartPage({ user }: { user: User | null }) {
 
   // Ejemplo: userId hardcoded o sacado de tu auth
   const userId = user?.id;
-  // Teléfono del dueño (o del negocio)
-  const ownerPhone = "+541111111111";
+  // Teléfono del dueño (o del negocio) en formato internacional sin el signo "+"
+  const ownerPhone = "543875155939";
 
   async function handleSendWhatsApp() {
     try {
       setLoading(true);
 
-      // Mapea tus items a la interfaz CartItem
+      // Mapea los items del carrito a la estructura que espera createOrderAction
       const cartItems = items.map((item) => ({
         productId: item.id,
         quantity: item.quantity,
@@ -58,27 +58,45 @@ export default function CartPage({ user }: { user: User | null }) {
         price: item.price,
       }));
 
+      // Crea el pedido y obtiene un orderId
       const orderId = await createOrderAction({
         userId: userId,
         items: cartItems,
         phoneNumber: ownerPhone,
       });
 
-      alert(`Pedido creado con ID: ${orderId}. Se envió un WhatsApp al dueño.`);
-      // Resetea el carrito una vez que todo se haya enviado correctamente
-      clearCart();
+      // Construye el mensaje para WhatsApp con los detalles del pedido
+      const orderDetails = items
+        .map(
+          (item) =>
+            `${item.name} - Talla: ${item.size}, Color: ${item.color}, Cantidad: ${item.quantity}`
+        )
+        .join("\n");
 
-      // Aquí puedes redirigir al usuario a otra página o mostrar un mensaje de éxito
-      // Por ejemplo, podrías redirigir a la página de "Gracias" o limpiar el carrito
-      router.push("/perfil"); // Si usas useRouter de Next.js
-      // Podrías redirigir a una página de "Gracias" o limpiar el carrito
+      const message = encodeURIComponent(
+        `Nuevo pedido\nID: ${orderId}\n\nDetalles:\n${orderDetails}\n\nTotal: $${total.toLocaleString(
+          "es-MX"
+        )}`
+      );
+
+      // URL de WhatsApp (nota: se debe eliminar el "+" en el número)
+      const whatsappUrl = `https://wa.me/${ownerPhone}?text=${message}`;
+
+      // Abre WhatsApp en una nueva pestaña
+      window.open(whatsappUrl, "_blank");
+
+      alert(`Pedido creado con ID: ${orderId}. Se envió un WhatsApp al dueño.`);
+      // Limpia el carrito y redirige
+      clearCart();
+      router.push("/perfil");
     } catch (err: any) {
       alert("Error al enviar pedido: " + err.message);
     } finally {
       setLoading(false);
     }
   }
-  // Calculate totals on component mount and when items change
+
+  // Calcular totales al montar el componente y cuando cambien los items
   useEffect(() => {
     calculateTotals();
   }, [items, calculateTotals]);

@@ -87,7 +87,7 @@ export default async function AdminLayout({
             variant="ghost"
             className="w-full justify-start text-beige-700 hover:text-beige-800 hover:bg-beige-100"
           >
-            <Link href="/admin/configuracion">
+            <Link href="/admin/edit">
               <Settings className="w-4 h-4 mr-2" />
               <span>Editar Producto</span>
             </Link>

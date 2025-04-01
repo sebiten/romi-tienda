@@ -15,6 +15,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/lib/types";
+import Link from "next/link";
 
 export default async function DeleteProductPage() {
   const supabase = await createClient();
@@ -91,7 +92,11 @@ export default async function DeleteProductPage() {
                 )}
                 <p className="text-md font-bold mt-2">${product.price ?? 0}</p>
               </div>
-
+              <Link href={`/admin/edit/${product.id}`}>
+                <Button variant="outline" size="sm">
+                  Editar
+                </Button>
+              </Link>
               {/* Alerta de confirmación */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -122,6 +127,8 @@ export default async function DeleteProductPage() {
                       >
                         Confirmar eliminación
                       </AlertDialogAction>
+                      import Link from "next/link"; // Dentro del mapeo de
+                      productos:
                     </form>
                   </AlertDialogFooter>
                 </AlertDialogContent>

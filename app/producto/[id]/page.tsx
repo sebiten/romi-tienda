@@ -1,62 +1,69 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
-import Image from "next/image"
-import Link from "next/link"
-import { ChevronRight, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { AddToCartButton } from "@/components/AddToCartButton"
-import { createClient } from "@/utils/supabase/client"
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { ChevronRight, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { AddToCartButton } from "@/components/AddToCartButton";
+import { createClient } from "@/utils/supabase/client";
+import CartWhatsAppButton from "@/components/CartWhatsAppButton";
 
 export default function ProductPage() {
-  const params = useParams()
-  const productId = params.id as string
+  const params = useParams();
+  const productId = params.id as string;
 
-  const [product, setProduct] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedSize, setSelectedSize] = useState("")
-  const [selectedColor, setSelectedColor] = useState("")
-  const [activeImage, setActiveImage] = useState(0)
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+  const [activeImage, setActiveImage] = useState(0);
 
   // Fetch product data
   useEffect(() => {
     async function fetchProduct() {
       try {
-        setLoading(true)
-        const supabase = createClient()
+        setLoading(true);
+        const supabase = createClient();
 
-        const { data, error } = await supabase.from("products").select("*").eq("id", productId).single()
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", productId)
+          .single();
 
         if (error) {
-          throw new Error(error.message)
+          throw new Error(error.message);
         }
 
-        setProduct(data)
+        setProduct(data);
 
         // Set default selections if available
         if (data.sizes && data.sizes.length > 0) {
-          setSelectedSize(data.sizes[0])
+          setSelectedSize(data.sizes[0]);
         }
 
         if (data.colors && data.colors.length > 0) {
-          setSelectedColor(data.colors[0])
+          setSelectedColor(data.colors[0]);
         }
       } catch (err) {
-        console.error("Error fetching product:", err)
-        setError("No se pudo cargar el producto. Por favor, inténtalo de nuevo.")
+        console.error("Error fetching product:", err);
+        setError(
+          "No se pudo cargar el producto. Por favor, inténtalo de nuevo."
+        );
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
     if (productId) {
-      fetchProduct()
+      fetchProduct();
     }
-  }, [productId])
+  }, [productId]);
 
   if (loading) {
     return (
@@ -87,21 +94,28 @@ export default function ProductPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error || !product) {
     return (
       <div className="container mx-auto py-12 px-4">
         <div className="max-w-md mx-auto text-center">
-          <h1 className="text-2xl font-serif text-beige-800 mb-4">Producto no encontrado</h1>
-          <p className="text-beige-600 mb-6">{error || "No pudimos encontrar el producto que estás buscando."}</p>
-          <Button asChild className="bg-beige-700 hover:bg-beige-800 text-beige-50">
+          <h1 className="text-2xl font-serif text-beige-800 mb-4">
+            Producto no encontrado
+          </h1>
+          <p className="text-beige-600 mb-6">
+            {error || "No pudimos encontrar el producto que estás buscando."}
+          </p>
+          <Button
+            asChild
+            className="bg-beige-700 hover:bg-beige-800 text-beige-50"
+          >
             <Link href="/shop">Volver a la tienda</Link>
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -114,7 +128,10 @@ export default function ProductPage() {
               Inicio
             </Link>
             <ChevronRight className="w-3 h-3 mx-2" />
-            <Link href="/shop" className="hover:text-beige-800 transition-colors">
+            <Link
+              href="/shop"
+              className="hover:text-beige-800 transition-colors"
+            >
               Tienda
             </Link>
             <ChevronRight className="w-3 h-3 mx-2" />
@@ -142,7 +159,9 @@ export default function ProductPage() {
                   <button
                     key={index}
                     className={`aspect-square relative rounded-md overflow-hidden border-2 ${
-                      activeImage === index ? "border-beige-700" : "border-beige-200"
+                      activeImage === index
+                        ? "border-beige-700"
+                        : "border-beige-200"
                     }`}
                     onClick={() => setActiveImage(index)}
                   >
@@ -161,16 +180,21 @@ export default function ProductPage() {
           {/* Product details */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-serif text-beige-800 mb-2">{product.title}</h1>
+              <h1 className="text-3xl font-serif text-beige-800 mb-2">
+                {product.title}
+              </h1>
               <p className="text-beige-600">{product.description}</p>
 
               <div className="mt-4 flex items-center">
-                <span className="text-2xl font-medium text-beige-800">${product.price.toLocaleString("es-MX")}</span>
-                {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="ml-2 text-lg line-through text-beige-500">
-                    ${product.originalPrice.toLocaleString("es-MX")}
-                  </span>
-                )}
+                <span className="text-2xl font-medium text-beige-800">
+                  ${product.price.toLocaleString("es-MX")}
+                </span>
+                {product.originalPrice &&
+                  product.originalPrice > product.price && (
+                    <span className="ml-2 text-lg line-through text-beige-500">
+                      ${product.originalPrice.toLocaleString("es-MX")}
+                    </span>
+                  )}
               </div>
             </div>
 
@@ -179,7 +203,9 @@ export default function ProductPage() {
             {/* Size selection */}
             {product.sizes && product.sizes.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-beige-700 mb-3">Talla</h3>
+                <h3 className="text-sm font-medium text-beige-700 mb-3">
+                  Talla
+                </h3>
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                   {product.sizes.map((size: string) => (
                     <button
@@ -201,7 +227,9 @@ export default function ProductPage() {
             {/* Color selection */}
             {product.colors && product.colors.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-beige-700 mb-3">Color</h3>
+                <h3 className="text-sm font-medium text-beige-700 mb-3">
+                  Color
+                </h3>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {product.colors.map((color: string) => (
                     <button
@@ -254,6 +282,5 @@ export default function ProductPage() {
         </div>
       </div>
     </main>
-  )
+  );
 }
-
