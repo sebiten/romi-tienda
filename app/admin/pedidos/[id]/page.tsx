@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -12,6 +12,26 @@ export default async function OrderDetailPage(props: {
   const params = await props.params;
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Si no hay usuario logueado, redirigimos
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  // 3) Consultamos la tabla profiles para ver isadmin
+  const { data: profileData, error: isAdminError } = await supabase
+    .from("profiles")
+    .select("isadmin")
+    .eq("id", user.id)
+    .single();
+
+  if (isAdminError || !profileData) {
+    // Si no se pudo obtener el perfil, o no existe
+    redirect("/");
+  }
   // Fetch the order with all related information
   const { data: order, error } = (await supabase
     .from("orders")

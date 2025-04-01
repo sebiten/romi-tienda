@@ -167,7 +167,7 @@ export default function Navbar({ user }: NavbarProps) {
               <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>
                 Inicio
               </MobileNavLink>
-              <MobileNavLink href="/shop" onClick={() => setIsMenuOpen(false)}>
+              <MobileNavLink href="/tienda" onClick={() => setIsMenuOpen(false)}>
                 Tienda
               </MobileNavLink>
               <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>

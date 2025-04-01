@@ -26,6 +26,26 @@ export default async function Perfil() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Verificar autenticación
+  if (!user) {
+    return redirect("/sign-in");
+  }
+
+  // extraer el userid de la tabla public.profiles
+  const { data: profileData, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user?.id)
+    .single();
+  if (error) {
+    console.error("Error al cargar el perfil:", error.message);
+    return redirect("/sign-in");
+  }
+  if (!profileData) {
+    console.error("Perfil no encontrado");
+    return redirect("/sign-in");
+  }
+
   if (!user) {
     return redirect("/sign-in");
   }
@@ -41,25 +61,32 @@ export default async function Perfil() {
     day: "numeric",
   });
 
-  // Datos de ejemplo para las pestañas
-  const mockOrders = [
-    {
-      id: "ORD-1234",
-      date: "15 Mar 2023",
-      status: "Entregado",
-      total: "$1,299",
-    },
-    { id: "ORD-5678", date: "2 Feb 2023", status: "En camino", total: "$899" },
-  ];
+  // extraemos los datos de la orden de cada usuario segun su id
+  const { data: orders, error: ordersError } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("user_id", user.id);
+  if (ordersError) {
+    console.error("Error al cargar las órdenes:", ordersError.message);
+  }
+  if (!orders) {
+    console.error("Órdenes no encontradas");
+  }
 
-  const mockAddresses = [
-    {
-      id: 1,
-      name: "Casa",
-      address: "Av. Siempre Viva 123, Springfield",
-      isDefault: true,
-    },
-  ];
+  // extraemos el product id de cada orders_items segun su order_id
+  const { data: orderItems, error: orderItemsError } = await supabase
+    .from("order_items")
+    .select("*")
+    .eq("order_id", orders![0]?.id);
+  if (orderItemsError) {
+    console.error(
+      "Error al cargar los items de la orden:",
+      orderItemsError.message
+    );
+  }
+  if (!orderItems) {
+    console.error("Items de la orden no encontrados");
+  }
 
   return (
     <main className="min-h-screen bg-beige-50">
@@ -144,42 +171,6 @@ export default async function Perfil() {
 
             <CardContent className="px-4 py-4">
               <nav className="space-y-1">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-beige-700 hover:text-beige-800 hover:bg-beige-100"
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  <span>Mi Perfil</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-beige-700 hover:text-beige-800 hover:bg-beige-100"
-                >
-                  <Package className="w-4 h-4 mr-2" />
-                  <span>Mis Pedidos</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-beige-700 hover:text-beige-800 hover:bg-beige-100"
-                >
-                  <Heart className="w-4 h-4 mr-2" />
-                  <span>Lista de Deseos</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-beige-700 hover:text-beige-800 hover:bg-beige-100"
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  <span>Direcciones</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-beige-700 hover:text-beige-800 hover:bg-beige-100"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  <span>Configuración</span>
-                </Button>
-
                 <div className="pt-4 mt-4 border-t border-beige-100">
                   <Button
                     variant="outline"
@@ -223,7 +214,15 @@ export default async function Perfil() {
                       ID de Usuario
                     </label>
                     <div className="p-2 bg-beige-50 rounded border border-beige-200 text-beige-800 font-mono text-sm">
-                      {user.id}
+                      {user.id.slice(0, 8)}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-beige-700 mb-1">
+                      Telefono Del usuario
+                    </label>
+                    <div className="p-2 bg-beige-50 rounded border border-beige-200 text-beige-800 font-mono text-sm">
+                      {profileData.user_phone}
                     </div>
                   </div>
                 </div>
@@ -249,9 +248,9 @@ export default async function Perfil() {
               <TabsContent value="orders" className="mt-4">
                 <Card className="bg-white border-beige-200 shadow-sm">
                   <CardContent className="p-0">
-                    {mockOrders.length > 0 ? (
+                    {orders?.length! > 0 ? (
                       <div className="divide-y divide-beige-100">
-                        {mockOrders.map((order) => (
+                        {orders?.map((order) => (
                           <div
                             key={order.id}
                             className="p-4 hover:bg-beige-50 transition-colors"
@@ -262,13 +261,27 @@ export default async function Perfil() {
                                 <span className="font-medium text-beige-800">
                                   {order.id}
                                 </span>
+                                <span className="text-sm text-beige-600 ml-2">
+                                  {order.product_id}
+                                </span>
                               </div>
                               <Badge status={order.status} />
+                              <Link
+                                href={`/perfil/pedidos/${order.id}`}
+                                className="ml-4"
+                              >
+                                <Button
+                                  variant="link"
+                                  className="text-sm text-beige-700 hover:text-beige-800"
+                                >
+                                  Ver detalles
+                                </Button>
+                              </Link>
                             </div>
                             <div className="flex justify-between text-sm">
                               <div className="flex items-center text-beige-600">
                                 <Calendar className="w-3 h-3 mr-1" />
-                                {order.date}
+                                {order.created_at.slice(0, 10)}
                               </div>
                               <span className="font-medium text-beige-700">
                                 {order.total}
@@ -295,7 +308,7 @@ export default async function Perfil() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="addresses" className="mt-4">
+              {/* <TabsContent value="addresses" className="mt-4">
                 <Card className="bg-white border-beige-200 shadow-sm">
                   <CardContent className="p-4">
                     {mockAddresses.length > 0 ? (
@@ -359,7 +372,7 @@ export default async function Perfil() {
                     )}
                   </CardContent>
                 </Card>
-              </TabsContent>
+              </TabsContent> */}
             </Tabs>
           </div>
         </div>

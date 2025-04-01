@@ -18,7 +18,7 @@ export default async function AdminDashboardPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return redirect("/sign-in?redirect=/admin");
+    return redirect("/sign-in");
   }
 
   // Verificar si el usuario es administrador
@@ -29,7 +29,7 @@ export default async function AdminDashboardPage() {
     .single();
 
   if (error || !profile || !profile.isadmin) {
-    return redirect("/acceso-denegado");
+    return redirect("/");
   }
 
   // Obtener estadísticas básicas
