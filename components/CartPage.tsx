@@ -37,74 +37,105 @@ export default function CartPage({ user }: { user: User | null }) {
     calculateTotals,
     clearCart,
   } = useCartStore();
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Ejemplo: userId hardcoded o sacado de tu auth
-  const userId = user?.id;
+  const [loading, setLoading] = useState(false);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+
+  const userId = user?.id ?? undefined;
   // Teléfono del dueño (o del negocio) en formato internacional sin el signo "+"
   const ownerPhone = "543875155939";
 
+  // 1. Pre-create the order as soon as the user lands or if items change
+  useEffect(() => {
+    async function preCreateOrder() {
+      try {
+        // Only create an order if we have items and no pending order yet
+        if (items.length > 0 && !pendingOrderId) {
+          const cartItems = items.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            size: item.size,
+            color: item.color,
+            price: item.price,
+          }));
+
+          const orderIdFromServer = await createOrderAction({
+            userId,
+            items: cartItems,
+            phoneNumber: ownerPhone,
+          });
+          setPendingOrderId(orderIdFromServer);
+        }
+      } catch (err) {
+        console.error("Error pre-creating order:", err);
+      }
+    }
+
+    preCreateOrder();
+  }, [items, pendingOrderId, userId, ownerPhone]);
+
+  // 2. When user finally taps "Send WhatsApp"
   async function handleSendWhatsApp() {
+    // Immediately open a blank window to avoid popup blocking on mobile
+    const newWindow = window.open("about:blank");
+
+    setLoading(true);
     try {
-      // Abre la ventana de inmediato para evitar bloqueos en móviles
-      const newWindow = window.open("about:blank");
-  
-      setLoading(true);
-  
-      // Mapea los items del carrito a la estructura que espera createOrderAction
-      const cartItems = items.map((item) => ({
-        productId: item.id,
-        quantity: item.quantity,
-        size: item.size,
-        color: item.color,
-        price: item.price,
-      }));
-  
-      // Crea el pedido y obtiene un orderId
-      const orderId = await createOrderAction({
-        userId: userId,
-        items: cartItems,
-        phoneNumber: ownerPhone,
-      });
-  
-      // Construye el mensaje para WhatsApp con los detalles del pedido
+      let orderIdToUse = pendingOrderId;
+
+      // If for some reason we don’t have a pending order (e.g., pre-create failed),
+      // create one just-in-time here
+      if (!orderIdToUse) {
+        const cartItems = items.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+          size: item.size,
+          color: item.color,
+          price: item.price,
+        }));
+
+        orderIdToUse = await createOrderAction({
+          userId,
+          items: cartItems,
+          phoneNumber: ownerPhone,
+        });
+      }
+
+      // Build WhatsApp message
       const orderDetails = items
         .map(
           (item) =>
-            `${item.name} - Talla: ${item.size}, Color: ${item.color}, Cantidad: ${item.quantity}`
+            `${item.name} - Talla: ${item.size}, Color: ${item.color}, Cant: ${item.quantity}`
         )
         .join("\n");
-  
+
       const message = encodeURIComponent(
-        `Hola! Me gustaria hacer este pedido 😊\nID: ${orderId}\n\nDetalles:\n${orderDetails}\n\nTotal: $${total.toLocaleString(
-          "es-AR"
-        )}`
+        `Hola me gustaria hacer este pedido! Pedido con ID: ${orderIdToUse}\n\n${orderDetails}\n\nTotal: $${total.toLocaleString("es-AR")}`
       );
-  
-      // URL de WhatsApp (nota: se debe eliminar el "+" en el número)
+
       const whatsappUrl = `https://wa.me/${ownerPhone}?text=${message}`;
-  
-      // Actualiza la URL de la ventana que abrimos
+
       if (newWindow) {
         newWindow.location.href = whatsappUrl;
       } else {
-        // Si falla la apertura de la ventana, redirige la ventana actual
+        // fallback if popup was blocked
         window.location.href = whatsappUrl;
       }
-  
-      alert(`Pedido creado con ID: ${orderId}. Se envió un WhatsApp al dueño.`);
+
+      // Show a success toast (non-blocking) instead of alert
+      alert(`Pedido #${orderIdToUse} creado. Abriendo WhatsApp...`);
+
       clearCart();
       router.push("/perfil");
-    } catch (err: any) {
-      alert("Error al enviar pedido: " + err.message);
+    } catch (error: any) {
+      console.log("Error al enviar pedido: " + error.message);
     } finally {
       setLoading(false);
     }
   }
-  
 
-  // Calcular totales al montar el componente y cuando cambien los items
+  // Recalculate totals whenever items change
   useEffect(() => {
     calculateTotals();
   }, [items, calculateTotals]);
