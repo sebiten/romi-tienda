@@ -63,7 +63,7 @@ export default function Footer() {
               <Link href="/" className="text-beige-600 hover:text-beige-800 transition-colors">
                 Inicio
               </Link>
-              <Link href="/shop" className="text-beige-600 hover:text-beige-800 transition-colors">
+              <Link href="/tienda" className="text-beige-600 hover:text-beige-800 transition-colors">
                 Tienda
               </Link>
               <Link href="/about" className="text-beige-600 hover:text-beige-800 transition-colors">

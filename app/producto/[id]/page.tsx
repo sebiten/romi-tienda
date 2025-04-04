@@ -111,7 +111,7 @@ export default function ProductPage() {
             asChild
             className="bg-beige-700 hover:bg-beige-800 text-beige-50"
           >
-            <Link href="/shop">Volver a la tienda</Link>
+            <Link href="/tienda">Volver a la tienda</Link>
           </Button>
         </div>
       </div>
@@ -129,7 +129,7 @@ export default function ProductPage() {
             </Link>
             <ChevronRight className="w-3 h-3 mx-2" />
             <Link
-              href="/shop"
+              href="/tienda"
               className="hover:text-beige-800 transition-colors"
             >
               Tienda

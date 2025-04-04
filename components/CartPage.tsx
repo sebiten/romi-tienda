@@ -275,7 +275,7 @@ export default function CartPage({ user }: { user: User | null }) {
                     asChild
                     className="text-beige-700 border-beige-300 hover:bg-beige-100 hover:text-beige-800"
                   >
-                    <Link href="/shop" className="flex items-center">
+                    <Link href="/tienda" className="flex items-center">
                       <ArrowLeft className="w-4 h-4 mr-2" />
                       Continuar Comprando
                     </Link>
@@ -425,7 +425,7 @@ function EmptyCart() {
         asChild
         className="bg-beige-700 hover:bg-beige-800 text-beige-50 px-8 py-6"
       >
-        <Link href="/shop">Explorar Productos</Link>
+        <Link href="/tienda">Explorar Productos</Link>
       </Button>
     </div>
   );

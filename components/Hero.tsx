@@ -57,7 +57,7 @@ export default function Hero() {
             size="lg"
             className="bg-[#A69681] hover:bg-[#8A7B68] text-[#F5F1EA] rounded-full px-8 py-6 text-lg font-light tracking-wide transition-all duration-300 hover:shadow-[0_5px_15px_rgba(166,150,129,0.4)] hover:translate-y-[-2px]"
           >
-            <Link href="/shop">Explorar Colección</Link>
+            <Link href="/tienda">Explorar Colección</Link>
           </Button>
 
           {/* Scroll indicator */}

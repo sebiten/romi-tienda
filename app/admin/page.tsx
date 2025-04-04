@@ -6,6 +6,7 @@ import { Package, Users, ShoppingBag, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { CartItem, Order, OrderItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { boolean } from "zod";
 
 // Add this helper function to calculate the total
 
