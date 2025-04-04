@@ -46,11 +46,11 @@ export default function CartPage({ user }: { user: User | null }) {
   // Teléfono del dueño (o del negocio) en formato internacional sin el signo "+"
   const ownerPhone = "543875155939";
 
-  // 1. Pre-create the order as soon as the user lands or if items change
+  // 1. Pre-crea la orden al cargar la página, si no hay una orden pendiente
   useEffect(() => {
     async function preCreateOrder() {
       try {
-        // Only create an order if we have items and no pending order yet
+        // Si ya tenemos una orden pendiente, no hacemos nada
         if (items.length > 0 && !pendingOrderId) {
           const cartItems = items.map((item) => ({
             productId: item.id,
@@ -59,7 +59,7 @@ export default function CartPage({ user }: { user: User | null }) {
             color: item.color,
             price: item.price,
           }));
-
+          // Crear la orden en el servidor y obtener el ID
           const orderIdFromServer = await createOrderAction({
             userId,
             items: cartItems,
@@ -75,17 +75,15 @@ export default function CartPage({ user }: { user: User | null }) {
     preCreateOrder();
   }, [items, pendingOrderId, userId, ownerPhone]);
 
-  // 2. When user finally taps "Send WhatsApp"
   async function handleSendWhatsApp() {
-    // Immediately open a blank window to avoid popup blocking on mobile
     const newWindow = window.open("about:blank");
 
     setLoading(true);
     try {
       let orderIdToUse = pendingOrderId;
 
-      // If for some reason we don’t have a pending order (e.g., pre-create failed),
-      // create one just-in-time here
+      // Si no hay orden pendiente, creamos una nueva
+
       if (!orderIdToUse) {
         const cartItems = items.map((item) => ({
           productId: item.id,
@@ -101,8 +99,8 @@ export default function CartPage({ user }: { user: User | null }) {
           phoneNumber: ownerPhone,
         });
       }
-
-      // Build WhatsApp message
+      // Enviar el mensaje de WhatsApp
+      // Formatear el mensaje con los detalles del pedido
       const orderDetails = items
         .map(
           (item) =>
@@ -119,7 +117,8 @@ export default function CartPage({ user }: { user: User | null }) {
       if (newWindow) {
         newWindow.location.href = whatsappUrl;
       } else {
-        // fallback if popup was blocked
+        // si no se puede abrir una nueva ventana, redirigir en la misma
+        // (esto puede ser bloqueado por algunos navegadores)
         window.location.href = whatsappUrl;
       }
 

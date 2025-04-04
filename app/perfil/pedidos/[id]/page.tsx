@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { ArrowLeft, Package } from 'lucide-react';
+import { ArrowLeft, Package } from "lucide-react";
 
 // Define TypeScript interfaces
 interface Product {
@@ -37,15 +37,21 @@ interface Order {
 }
 
 interface OrderDetailsPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default async function OrderDetailsPage({ params }: OrderDetailsPageProps) {
+export default async function OrderDetailsPage({
+  params,
+}: OrderDetailsPageProps) {
   const supabase = createClient();
-  const { id } = params;
+  const { id } = await params;
 
-  const { data: order, error } = await (await supabase).from("orders")
-    .select(`
+  const { data: order, error } = (await (
+    await supabase
+  )
+    .from("orders")
+    .select(
+      `
       id,
       status,
       created_at,
@@ -66,9 +72,10 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
           images
         )
       )
-    `)
+    `
+    )
     .eq("id", id)
-    .single() as { data: Order | null, error: any };
+    .single()) as { data: Order | null; error: any };
 
   if (error) {
     console.error("Error al cargar la orden:", error.message);
@@ -82,9 +89,9 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
   // Calculate total price
   const calculateTotal = (): number => {
     if (!order.order_items || order.order_items.length === 0) return 0;
-    
+
     return order.order_items.reduce((total, item) => {
-      return total + (item.products.price * item.quantity);
+      return total + item.products.price * item.quantity;
     }, 0);
   };
 
@@ -94,30 +101,38 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
     <main className="bg-beige-50 min-h-screen py-12 px-4">
       <div className="container mx-auto max-w-4xl">
         <div className="mb-8">
-          <Link href="/admin/pedidos" className="flex items-center text-beige-600 hover:text-beige-800 mb-4">
+          <Link
+            href="/admin/pedidos"
+            className="flex items-center text-beige-600 hover:text-beige-800 mb-4"
+          >
             <ArrowLeft className="h-4 w-4 mr-1" />
             Volver a pedidos
           </Link>
-          
+
           <h1 className="font-serif text-3xl md:text-4xl text-beige-800 mb-2">
             Pedido #{order.id.slice(-6)}
           </h1>
           <div className="flex items-center gap-3">
             <p className="text-beige-600">
               {new Date(order.created_at).toLocaleDateString("es-AR", {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
               })}
             </p>
-            <span className={`px-2 py-0.5 text-xs rounded-full ${
-              order.status === 'pendiente-pago' ? 'bg-amber-100 text-amber-800' : 
-              order.status === 'completado' ? 'bg-green-100 text-green-800' : 
-              order.status === 'cancelado' ? 'bg-red-100 text-red-800' : 
-              'bg-gray-100 text-gray-800'
-            }`}>
+            <span
+              className={`px-2 py-0.5 text-xs rounded-full ${
+                order.status === "pendiente-pago"
+                  ? "bg-amber-100 text-amber-800"
+                  : order.status === "completado"
+                    ? "bg-green-100 text-green-800"
+                    : order.status === "cancelado"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-gray-100 text-gray-800"
+              }`}
+            >
               {order.status}
             </span>
           </div>
@@ -136,12 +151,17 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                 {order.order_items && order.order_items.length > 0 ? (
                   <div className="divide-y divide-beige-100">
                     {order.order_items.map((item) => (
-                      <div key={item.id} className="py-4 flex items-center gap-4">
+                      <div
+                        key={item.id}
+                        className="py-4 flex items-center gap-4"
+                      >
                         <div className="h-16 w-16 rounded-md overflow-hidden bg-beige-100 flex-shrink-0 flex items-center justify-center">
                           {item.products.images && item.products.images[0] ? (
-                            <img 
-                              src={item.products.images[0] || "/placeholder.svg"} 
-                              alt={item.products.title} 
+                            <img
+                              src={
+                                item.products.images[0] || "/placeholder.svg"
+                              }
+                              alt={item.products.title}
                               className="h-full w-full object-cover"
                             />
                           ) : (
@@ -178,7 +198,9 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                 <div className="border-t border-beige-200 mt-4 pt-4">
                   <div className="flex justify-between py-2">
                     <p className="text-beige-600">Subtotal</p>
-                    <p className="font-medium text-beige-800">${totalPrice.toFixed(2)}</p>
+                    <p className="font-medium text-beige-800">
+                      ${totalPrice.toFixed(2)}
+                    </p>
                   </div>
                   <div className="flex justify-between py-2">
                     <p className="text-beige-600">Envío</p>
@@ -213,7 +235,6 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                     <p className="text-sm text-beige-600 mt-1">
                       @{order.profiles.username}
                     </p>
-                  
                   </div>
                 ) : (
                   <p className="text-center py-2 text-beige-600">
@@ -233,26 +254,35 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm font-medium text-beige-700 mb-1">Estado actual:</p>
-                    <span className={`px-2 py-1 text-sm rounded-md inline-block ${
-                      order.status === 'pendiente-pago' ? 'bg-amber-100 text-amber-800' : 
-                      order.status === 'completado' ? 'bg-green-100 text-green-800' : 
-                      order.status === 'cancelado' ? 'bg-red-100 text-red-800' : 
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <p className="text-sm font-medium text-beige-700 mb-1">
+                      Estado actual:
+                    </p>
+                    <span
+                      className={`px-2 py-1 text-sm rounded-md inline-block ${
+                        order.status === "pendiente-pago"
+                          ? "bg-amber-100 text-amber-800"
+                          : order.status === "completado"
+                            ? "bg-green-100 text-green-800"
+                            : order.status === "cancelado"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
                       {order.status}
                     </span>
                   </div>
-                  
+
                   <div>
-                    <p className="text-sm font-medium text-beige-700 mb-1">Fecha de creación:</p>
+                    <p className="text-sm font-medium text-beige-700 mb-1">
+                      Fecha de creación:
+                    </p>
                     <p className="text-beige-600">
                       {new Date(order.created_at).toLocaleDateString("es-AR", {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </p>
                   </div>
@@ -261,7 +291,6 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
             </Card>
           </div>
         </div>
-
       </div>
     </main>
   );
