@@ -1,5 +1,4 @@
 import BlackFridayBanner from "@/components/BlackFriday";
-import SendWhatsapp from "@/components/EnviarWhatsapp";
 import Hero from "@/components/Hero";
 import { ProductGrid } from "@/components/ProductGrid";
 import TitleUsable from "@/components/Title";
@@ -21,7 +20,6 @@ export default async function Home() {
           ctaLink="/ofertas"
           backgroundImage="/fondo.webp" // Opcional
         />
-        <SendWhatsapp />
       </main>
     </>
   );
