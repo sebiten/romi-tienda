@@ -20,12 +20,29 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { useCartStore } from "../app/store/cartStore";
-import { createOrderAction } from "../app/admin/actions";
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
+import { useCartStore } from "@/app/store/cartStore";
+import { createOrderAction } from "@/app/admin/actions";
 
-export default function CartPage({ user }: { user: User | null }) {
+// Ejemplo de estructura que puede tener cada ítem del carrito
+interface CartItem {
+  id: string;
+  name: string;
+  image?: string;
+  price: number;
+  originalPrice?: number;
+  size?: string;
+  color?: string;
+  quantity: number;
+}
+
+// Props para tu componente
+interface CartPageProps {
+  user: User | null;
+}
+
+export default function CartPage({ user }: CartPageProps) {
   const {
     items,
     subtotal,
@@ -37,29 +54,31 @@ export default function CartPage({ user }: { user: User | null }) {
     calculateTotals,
     clearCart,
   } = useCartStore();
-  const router = useRouter();
 
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
-  const userId = user?.id ?? undefined;
-  // Teléfono del dueño (o del negocio) en formato internacional sin el signo "+"
-  const ownerPhone = "543875155939";
+  // Teléfono del negocio (formato internacional, sin '+')
+  const ownerPhone = "543886575936";
 
-  // 1. Pre-crea la orden al cargar la página, si no hay una orden pendiente
+  // ID del usuario (si estás usando Supabase u otro)
+  const userId = user?.id ?? undefined;
+
+  // 1. Pre-crea la orden si el carrito no está vacío y no tenemos orden pendiente
   useEffect(() => {
     async function preCreateOrder() {
       try {
-        // Si ya tenemos una orden pendiente, no hacemos nada
         if (items.length > 0 && !pendingOrderId) {
           const cartItems = items.map((item) => ({
-            productId: item.id,
+            productId: item.id.split("_")[0],
             quantity: item.quantity,
             size: item.size,
             color: item.color,
             price: item.price,
+            // puedo agregrar item.name para saber que producto es
           }));
-          // Crear la orden en el servidor y obtener el ID
+          // Llamamos a la acción que crea la orden en el servidor (AJUSTA según tu lógica)
           const orderIdFromServer = await createOrderAction({
             userId,
             items: cartItems,
@@ -75,32 +94,29 @@ export default function CartPage({ user }: { user: User | null }) {
     preCreateOrder();
   }, [items, pendingOrderId, userId, ownerPhone]);
 
+  // 2. Función para enviar el pedido vía Cloud API (sin URL de WhatsApp en el Front)
   async function handleSendWhatsApp() {
-    const newWindow = window.open("about:blank");
-
     setLoading(true);
     try {
       let orderIdToUse = pendingOrderId;
-
-      // Si no hay orden pendiente, creamos una nueva
-
+      // Si no hay orden pendiente, la creamos
       if (!orderIdToUse) {
         const cartItems = items.map((item) => ({
-          productId: item.id,
+          productId: item.id.split("_")[0],
           quantity: item.quantity,
           size: item.size,
           color: item.color,
           price: item.price,
+            // puedo agregrar item.name para saber que producto es
         }));
-
         orderIdToUse = await createOrderAction({
           userId,
           items: cartItems,
           phoneNumber: ownerPhone,
         });
       }
-      // Enviar el mensaje de WhatsApp
-      // Formatear el mensaje con los detalles del pedido
+
+      // Construir el texto con los datos del carrito
       const orderDetails = items
         .map(
           (item) =>
@@ -108,37 +124,46 @@ export default function CartPage({ user }: { user: User | null }) {
         )
         .join("\n");
 
-      const message = encodeURIComponent(
-        `Hola me gustaria hacer este pedido! Pedido con ID: ${orderIdToUse}\n\n${orderDetails}\n\nTotal: $${total.toLocaleString("es-AR")}`
-      );
+      const textToSend =
+        `Hola, me gustaría hacer este pedido!\n` +
+        `Pedido con ID: ${orderIdToUse}\n\n${orderDetails}\n\n` +
+        `Total: $${total.toLocaleString("es-AR")}`;
 
-      const whatsappUrl = `https://wa.me/${ownerPhone}?text=${message}`;
+      // Llamamos a nuestro endpoint en /api/send-whatsapp
+      const res = await fetch("/api/send-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phoneNumber: ownerPhone, // Ajusta si tu API requiere otro formato
+          message: textToSend,
+        }),
+      });
 
-      if (newWindow) {
-        newWindow.location.href = whatsappUrl;
-      } else {
-        // si no se puede abrir una nueva ventana, redirigir en la misma
-        // (esto puede ser bloqueado por algunos navegadores)
-        window.location.href = whatsappUrl;
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Error al enviar mensaje:", errorData);
+        alert("No se pudo enviar tu pedido por WhatsApp.");
+        return;
       }
 
-      // Show a success toast (non-blocking) instead of alert
-      alert(`Pedido #${orderIdToUse} creado. Abriendo WhatsApp...`);
-
+      // Éxito
       clearCart();
       router.push("/perfil");
+      alert(`Pedido #${orderIdToUse} enviado correctamente por WhatsApp.`);
     } catch (error: any) {
-      console.log("Error al enviar pedido: " + error.message);
+      console.error("Error al enviar pedido:", error.message);
+      alert("Ocurrió un error al enviar el pedido.");
     } finally {
       setLoading(false);
     }
   }
 
-  // Recalculate totals whenever items change
+  // Recalcular totales cuando cambian los items
   useEffect(() => {
     calculateTotals();
   }, [items, calculateTotals]);
 
+  // Render
   return (
     <main className="bg-beige-50 min-h-screen py-12 px-4">
       <div className="container mx-auto max-w-7xl">
@@ -179,7 +204,7 @@ export default function CartPage({ user }: { user: User | null }) {
                     {items.map((item) => (
                       <li key={item.id} className="p-4 md:p-6">
                         <div className="flex flex-col sm:flex-row gap-4">
-                          {/* Product image */}
+                          {/* Imagen */}
                           <div className="relative w-full sm:w-24 h-24 bg-beige-50 rounded-md overflow-hidden flex-shrink-0">
                             <Image
                               src={item.image || "/placeholder.svg"}
@@ -189,7 +214,7 @@ export default function CartPage({ user }: { user: User | null }) {
                             />
                           </div>
 
-                          {/* Product details */}
+                          {/* Detalles */}
                           <div className="flex-1 flex flex-col sm:flex-row gap-4">
                             <div className="flex-1">
                               <h3 className="font-medium text-beige-800">
@@ -202,12 +227,15 @@ export default function CartPage({ user }: { user: User | null }) {
 
                               {/* Mobile price */}
                               <div className="sm:hidden mt-2 flex items-center">
-                                {item.originalPrice > item.price && (
-                                  <span className="text-sm line-through text-beige-500 mr-2">
-                                    $
-                                    {item.originalPrice.toLocaleString("es-AR")}
-                                  </span>
-                                )}
+                                {item.originalPrice &&
+                                  item.originalPrice > item.price && (
+                                    <span className="text-sm line-through text-beige-500 mr-2">
+                                      $
+                                      {item.originalPrice.toLocaleString(
+                                        "es-AR"
+                                      )}
+                                    </span>
+                                  )}
                                 <span className="font-medium text-beige-800">
                                   ${item.price.toLocaleString("es-AR")}
                                 </span>
@@ -215,7 +243,7 @@ export default function CartPage({ user }: { user: User | null }) {
                             </div>
 
                             <div className="flex flex-row sm:flex-col justify-between items-center sm:items-end gap-2">
-                              {/* Quantity controls */}
+                              {/* Controles de cantidad */}
                               <div className="flex items-center border border-beige-200 rounded-md">
                                 <button
                                   className="w-8 h-8 flex items-center justify-center text-beige-600 hover:text-beige-800 hover:bg-beige-100 transition-colors"
@@ -242,18 +270,21 @@ export default function CartPage({ user }: { user: User | null }) {
 
                               {/* Desktop price */}
                               <div className="hidden sm:flex flex-col items-end">
-                                {item.originalPrice > item.price && (
-                                  <span className="text-sm line-through text-beige-500">
-                                    $
-                                    {item.originalPrice.toLocaleString("es-AR")}
-                                  </span>
-                                )}
+                                {item.originalPrice &&
+                                  item.originalPrice > item.price && (
+                                    <span className="text-sm line-through text-beige-500">
+                                      $
+                                      {item.originalPrice.toLocaleString(
+                                        "es-AR"
+                                      )}
+                                    </span>
+                                  )}
                                 <span className="font-medium text-beige-800">
                                   ${item.price.toLocaleString("es-AR")}
                                 </span>
                               </div>
 
-                              {/* Remove button */}
+                              {/* Eliminar */}
                               <button
                                 className="text-beige-600 hover:text-beige-800 transition-colors"
                                 aria-label="Eliminar producto"
@@ -284,7 +315,7 @@ export default function CartPage({ user }: { user: User | null }) {
               </Card>
             </div>
 
-            {/* Order Summary */}
+            {/* Resumen */}
             <div>
               <Card className="bg-white border-beige-200 shadow-sm sticky top-24">
                 <CardHeader className="bg-beige-100/50 px-6 py-4 border-b border-beige-200">
@@ -377,7 +408,7 @@ export default function CartPage({ user }: { user: User | null }) {
                 </CardFooter>
               </Card>
 
-              {/* Shipping info */}
+              {/* Info adicional de envío */}
               <div className="mt-4 bg-beige-100/70 rounded-lg p-4 text-sm text-beige-700">
                 <h3 className="font-medium text-beige-800 mb-2">
                   Información de Envío
@@ -408,6 +439,7 @@ export default function CartPage({ user }: { user: User | null }) {
   );
 }
 
+// Componente para cuando el carrito está vacío
 function EmptyCart() {
   return (
     <div className="bg-white border border-beige-200 rounded-lg shadow-sm p-8 md:p-12 text-center max-w-2xl mx-auto">
