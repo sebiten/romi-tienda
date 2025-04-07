@@ -107,7 +107,7 @@ export default function CartPage({ user }: CartPageProps) {
           size: item.size,
           color: item.color,
           price: item.price,
-            // puedo agregrar item.name para saber que producto es
+          name: item.name,
         }));
         orderIdToUse = await createOrderAction({
           userId,
@@ -116,28 +116,32 @@ export default function CartPage({ user }: CartPageProps) {
         });
       }
 
-      // Construir el texto con los datos del carrito
-      const orderDetails = items
-        .map(
-          (item) =>
-            `${item.name} - Talla: ${item.size}, Color: ${item.color}, Cant: ${item.quantity}`
-        )
-        .join("\n");
+      // // Construir el texto con los datos del carrito
+      // const orderDetails = items
+      //   .map(
+      //     (item) =>
+      //       `${item.name} - Talla: ${item.size}, Color: ${item.color}, Cant: ${item.quantity}`
+      //   )
+      //   .join("\n");
 
-      const textToSend =
-        `Hola, me gustaría hacer este pedido!\n` +
-        `Pedido con ID: ${orderIdToUse}\n\n${orderDetails}\n\n` +
-        `Total: $${total.toLocaleString("es-AR")}`;
+      // const textToSend =
+      //   `Hola, me gustaría hacer este pedido!\n` +
+      //   `Pedido con ID: ${orderIdToUse}\n\n${orderDetails}\n\n` +
+      //   `Total: $${total.toLocaleString("es-AR")}`;
 
       // Llamamos a nuestro endpoint en /api/send-whatsapp
       const res = await fetch("/api/send-whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phoneNumber: ownerPhone, // Ajusta si tu API requiere otro formato
-          message: textToSend,
+          phoneNumber: ownerPhone,
+          clientName: user?.user_metadata.full_name || "Cliente",
+          orderId: orderIdToUse,
+          cartDetails: items.map((item) => `${item.name} (${item.quantity})`).join(", "),
+          total: total.toLocaleString("es-AR"),
         }),
       });
+  
 
       if (!res.ok) {
         const errorData = await res.json();
