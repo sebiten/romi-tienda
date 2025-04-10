@@ -4,7 +4,7 @@ import { Product } from "@/lib/types";
 import { updateProductAction } from "../../actions";
 
 interface EditProductPageProps {
-  params: Promise<{ paramsid: string }>;
+  params: { id: string };
 }
 
 export default async function EditProductPage({
@@ -12,7 +12,11 @@ export default async function EditProductPage({
 }: EditProductPageProps) {
   const supabase = await createClient();
   // En lugar de usar directamente params.id
-  const { paramsid } = await params;
+  const { id } = await params;
+  if (!id || id.length !== 36) {
+    console.error("ID de producto inválido:", id);
+    notFound();
+  }
 
   // Verificar autenticación
   const {
@@ -32,7 +36,7 @@ export default async function EditProductPage({
   const { data: product, error } = await supabase
     .from("products")
     .select("*")
-    .eq("id", paramsid)
+    .eq("id", id)
     .single();
   if (error || !product) {
     console.error("Error al cargar el producto:", error?.message);

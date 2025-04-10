@@ -6,15 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { signOutAction } from "@/app/actions";
 import { Button } from "./ui/button";
-import {
-  Menu,
-  X,
-  User,
-  LogOut,
-  ChevronDown,
-  Heart,
-  Search,
-} from "lucide-react";
+import { Menu, X, User, LogOut, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,9 +18,10 @@ import { CartIcon } from "./CartIcon";
 
 interface NavbarProps {
   user: any | null;
+  isAdmin?: boolean;
 }
 
-export default function Navbar({ user }: NavbarProps) {
+export default function Navbar({ user, isAdmin }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -51,8 +44,16 @@ export default function Navbar({ user }: NavbarProps) {
       }`}
     >
       {/* Top announcement bar */}
-      <div className="bg-beige-800 text-beige-50 py-1.5 text-center text-xs md:text-sm font-light">
-        <p>Envío gratis en pedidos superiores a $999 ARG</p>
+      <div className="bg-beige-800 text-beige-50 py-1.5 px-4 md:px-6 text-xs md:text-sm font-light">
+        <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center">
+          <p>Envío gratis en pedidos superiores a $999 ARG</p>
+          <div className="flex items-center mt-1 sm:mt-0">
+            <span className="font-medium">Teléfono: </span>
+            <a href="tel:+123456789" className="ml-1 hover:underline">
+              +123 456 789
+            </a>
+          </div>
+        </div>
       </div>
 
       <div className="container mx-auto px-4">
@@ -87,6 +88,9 @@ export default function Navbar({ user }: NavbarProps) {
           <nav className="hidden md:flex items-center space-x-1">
             <NavLink href="/">Inicio</NavLink>
             <NavLink href="/tienda">Tienda</NavLink>
+            <NavLink href="/admin">
+              {isAdmin ? "Admin" : ""}
+            </NavLink>
           </nav>
 
           {/* Right section: search, cart, user */}
@@ -95,17 +99,11 @@ export default function Navbar({ user }: NavbarProps) {
 
             {user ? (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-beige-700 hover:text-beige-800 hover:bg-beige-200/50 gap-1"
-                  >
-                    <span className="hidden sm:inline-block max-w-[100px] truncate">
-                      {user.email?.split("@")[0]}
-                    </span>
-                    <ChevronDown size={16} />
-                  </Button>
+                <DropdownMenuTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 text-beige-700 hover:text-beige-800 hover:bg-beige-200/50 h-9 px-3 gap-1">
+                  <span className="hidden sm:inline-block max-w-[100px] truncate">
+                    {user.email?.split("@")[0]}
+                  </span>
+                  <ChevronDown size={16} />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
@@ -167,17 +165,20 @@ export default function Navbar({ user }: NavbarProps) {
               <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>
                 Inicio
               </MobileNavLink>
-              <MobileNavLink href="/tienda" onClick={() => setIsMenuOpen(false)}>
+              <MobileNavLink
+                href="/tienda"
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Tienda
               </MobileNavLink>
               <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>
                 Nosotros
               </MobileNavLink>
               <MobileNavLink
-                href="/contact"
+                href="/admin"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Contacto
+                {isAdmin ? "Admin" : ""}
               </MobileNavLink>
 
               {!user && (

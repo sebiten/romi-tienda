@@ -33,7 +33,7 @@ export default async function NewProductPage() {
 
     // 4) Renderizamos el formulario
     return (
-        <section className="p-4">
+        <section className="p-4 mx-auto">
             <h1 className="text-2xl font-semibold mb-4">Crear nuevo producto</h1>
             <NewProductForm />
         </section>

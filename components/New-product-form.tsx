@@ -5,61 +5,80 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/utils/supabase/client";
+import { convertImageToWebP } from "@/utils/convertToWebp";
 
-// Tamaño máximo de archivo: 2 MB (ajústalo a tus necesidades)
 const MAX_SIZE = 2 * 1024 * 1024;
 
 export default function NewProductForm() {
   const [submitting, setSubmitting] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
     []
   );
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const supabase = createClient();
-  // Ref al <form> real en el DOM
   const formRef = useRef<HTMLFormElement>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    setFormError(null);
     setSubmitting(true);
-    // 1. Validamos el archivo (opcional)
+
     let fileName = "";
     let publicUrl = "";
+
     if (file) {
-      // Validar tamaño
+      if (!file.type.startsWith("image/")) {
+        setFormError("El archivo debe ser una imagen válida.");
+        setSubmitting(false);
+        return;
+      }
+
       if (file.size > MAX_SIZE) {
-        alert("La imagen excede los 2MB permitidos.");
-        setSubmitting(false);
-        return;
-      }
-      // Si pasa las validaciones, subimos la imagen
-      fileName = `${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("product-images")
-        .upload(fileName, file);
-
-      if (uploadError) {
-        alert("Error subiendo la imagen: " + uploadError.message);
+        setFormError("La imagen excede los 2MB permitidos.");
         setSubmitting(false);
         return;
       }
 
-      const { data } = supabase.storage
-        .from("product-images")
-        .getPublicUrl(uploadData.path);
+      try {
+        const webpBlob = await convertImageToWebP(file);
+        fileName = `${Date.now()}-${file.name.split(".")[0]}.webp`;
+        const webpFile = new File([webpBlob], fileName, {
+          type: "image/webp",
+        });
 
-      publicUrl = data?.publicUrl ?? "";
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(fileName, webpFile);
+
+        if (uploadError) {
+          setFormError("Error subiendo la imagen: " + uploadError.message);
+          setSubmitting(false);
+          return;
+        }
+
+        const { data } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(uploadData.path);
+
+        publicUrl = data?.publicUrl ?? "";
+      } catch (error) {
+        setFormError("Hubo un problema al convertir la imagen.");
+        console.error(error);
+        setSubmitting(false);
+        return;
+      }
     }
 
-    // 2. Leemos campos del formulario
     if (!formRef.current) {
       setSubmitting(false);
       return;
     }
+
     const formData = new FormData(formRef.current);
 
-    // Extraemos valores
     const title = (formData.get("title") as string)?.trim() || "";
     const description = (formData.get("description") as string)?.trim() || "";
     const priceStr = (formData.get("price") as string) || "0";
@@ -68,44 +87,52 @@ export default function NewProductForm() {
     const stockStr = (formData.get("stock") as string) || "0";
     const category_id = (formData.get("category_id") as string)?.trim() || "";
 
-    // Validaciones sencillas de campos
     if (title.length < 3) {
-      alert("El título debe tener al menos 3 caracteres.");
+      setFormError("El título debe tener al menos 3 caracteres.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (!categories.some((cat) => cat.id === category_id)) {
+      setFormError("Debes seleccionar una categoría válida.");
       setSubmitting(false);
       return;
     }
 
     const price = parseFloat(priceStr);
     if (isNaN(price) || price < 0) {
-      alert("El precio debe ser un número mayor o igual a 0.");
+      setFormError("El precio debe ser un número mayor o igual a 0.");
       setSubmitting(false);
       return;
     }
 
-    // Convertimos tallas y colores a arrays
     const sizes = sizesStr
       .split(",")
       .map((s) => s.trim())
       .filter((s) => s !== "");
+    if (sizes.length > 5) {
+      setFormError("Solo se permiten hasta 5 tallas.");
+      setSubmitting(false);
+      return;
+    }
+
     const colors = colorsStr
       .split(",")
       .map((c) => c.trim())
       .filter((c) => c !== "");
+    if (colors.length > 5) {
+      setFormError("Solo se permiten hasta 5 colores.");
+      setSubmitting(false);
+      return;
+    }
 
-    // stocks & category_id
     const stock = parseInt(stockStr);
     if (isNaN(stock) || stock < 0) {
-      alert("El stock debe ser un número entero mayor o igual a 0.");
-      setSubmitting(false);
-      return;
-    }
-    if (!category_id || category_id.length < 10) {
-      alert("Debes ingresar un ID de categoría válido.");
+      setFormError("El stock debe ser un número entero mayor o igual a 0.");
       setSubmitting(false);
       return;
     }
 
-    // 3. Insertar en la tabla products
     const { data: insertData, error: insertError } = await supabase
       .from("products")
       .insert([
@@ -121,14 +148,11 @@ export default function NewProductForm() {
         },
       ])
       .select();
-    // para ver la fila insertada
 
-    // 4. Si falla el insert, opcionalmente borramos la imagen
     if (insertError) {
       console.error("ERROR al insertar producto:", insertError);
-      alert("Error al insertar producto: " + insertError.message);
+      setFormError("Error al insertar producto: " + insertError.message);
 
-      // Limpieza: eliminar la imagen subida (si existe y no la necesitamos)
       if (fileName) {
         await supabase.storage.from("product-images").remove([fileName]);
       }
@@ -137,15 +161,14 @@ export default function NewProductForm() {
       return;
     }
 
-    // 5. Éxito: reseteamos el formulario
     console.log("Producto insertado:", insertData);
+    setFormError(null);
     alert("¡Producto creado con éxito!");
     formRef.current.reset();
     setFile(null);
     setSubmitting(false);
   }
 
-  // Cargar categorías al cargar el formulario
   useEffect(() => {
     async function fetchCategories() {
       const { data, error } = await supabase
@@ -161,104 +184,120 @@ export default function NewProductForm() {
   }, []);
 
   return (
-    <>
-      <form
-        ref={formRef}
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-4 max-w-lg"
-      >
-        {/* Título */}
-        <label className="block">
-          <span className="text-sm font-medium">Título</span>
-          <Input
-            name="title"
-            placeholder="Nombre del producto"
-            className="mt-1"
-            required
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 max-w-lg mx-auto"
+    >
+      {formError && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
+          {formError}
+        </div>
+      )}
+
+      <label className="block">
+        <span className="text-sm font-medium">Título</span>
+        <Input
+          name="title"
+          placeholder="Nombre del producto"
+          className="mt-1"
+          required
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium">Descripción</span>
+        <Textarea
+          name="description"
+          placeholder="Descripción del producto"
+          className="mt-1"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium">Precio</span>
+        <Input
+          type="number"
+          name="price"
+          placeholder="25.99"
+          step="0.01"
+          min="0"
+          className="mt-1"
+          required
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium">Tallas (coma separadas)</span>
+        <Input name="sizes" className="mt-1" />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium">Colores (coma separadas)</span>
+        <Input name="colors" className="mt-1" />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium">Stock</span>
+        <Input
+          type="number"
+          name="stock"
+          placeholder="Cantidad disponible"
+          min="0"
+          className="mt-1"
+          required
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium">Categoría</span>
+        <select
+          name="category_id"
+          required
+          className="mt-1 w-full border rounded px-3 py-2"
+        >
+          <option value="">Selecciona una categoría</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium">Imagen del producto</span>
+        <Input
+          type="file"
+          accept="image/*"
+          required
+          onChange={(e) => {
+            const selectedFile = e.target.files?.[0] ?? null;
+            setFile(selectedFile);
+
+            if (selectedFile) {
+              const url = URL.createObjectURL(selectedFile);
+              setPreviewUrl(url);
+            } else {
+              setPreviewUrl(null);
+            }
+          }}
+          className="mt-1"
+        />
+      </label>
+      {previewUrl && (
+        <div className="mt-4">
+          <p className="text-sm mb-1">Vista previa:</p>
+          <img
+            src={previewUrl}
+            alt="Vista previa"
+            className="max-h-64 rounded border shadow"
           />
-        </label>
-
-        {/* Descripción */}
-        <label className="block">
-          <span className="text-sm font-medium">Descripción</span>
-          <Textarea
-            name="description"
-            placeholder="Descripción del producto"
-            className="mt-1"
-          />
-        </label>
-
-        {/* Precio */}
-        <label className="block">
-          <span className="text-sm font-medium">Precio</span>
-          <Input
-            type="number"
-            name="price"
-            placeholder="25.99"
-            step="0.01"
-            min="0"
-            className="mt-1"
-            required
-          />
-        </label>
-
-        {/* Tallas */}
-        <label className="block">
-          <span className="text-sm font-medium">Tallas (coma separadas)</span>
-          <Input name="sizes" className="mt-1" />
-        </label>
-
-        {/* Colores */}
-        <label className="block">
-          <span className="text-sm font-medium">Colores (coma separadas)</span>
-          <Input name="colors" className="mt-1" />
-        </label>
-        {/* Stock */}
-        <label className="block">
-          <span className="text-sm font-medium">Stock</span>
-          <Input
-            type="number"
-            name="stock"
-            placeholder="Cantidad disponible"
-            min="0"
-            className="mt-1"
-            required
-          />
-        </label>
-
-        {/* Categoría */}
-        <label className="block">
-          <span className="text-sm font-medium">Categoría</span>
-          <select
-            name="category_id"
-            required
-            className="mt-1 w-full border rounded px-3 py-2"
-          >
-            <option value="">Selecciona una categoría</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {/* Imagen */}
-        <label className="block">
-          <span className="text-sm font-medium">Imagen del producto</span>
-          <Input
-            type="file"
-            onChange={(e) => {
-              setFile(e.target.files?.[0] ?? null);
-            }}
-            className="mt-1"
-          />
-        </label>
-
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Creando..." : "Crear producto"}
-        </Button>
-      </form>
-    </>
+        </div>
+      )}
+      <Button type="submit" disabled={submitting}>
+        {submitting ? "Creando..." : "Crear producto"}
+      </Button>
+    </form>
   );
 }
