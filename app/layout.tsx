@@ -23,15 +23,12 @@ export default async function RootLayout({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    // Si no hay usuario, redirigir a la página de inicio
-    redirect("/");
-  }
+
   // 3) Consultamos la tabla profiles para ver isadmin
   const { data: profileData, error: isAdminError } = await supabase
     .from("profiles")
     .select("isadmin")
-    .eq("id", user.id)
+    .eq("id", user?.id)
     .single();
 
   if (isAdminError || !profileData) {
