@@ -76,7 +76,6 @@ export default function CartPage({ user }: CartPageProps) {
             size: item.size,
             color: item.color,
             price: item.price,
-            // puedo agregrar item.name para saber que producto es
           }));
           // Llamamos a la acción que crea la orden en el servidor (AJUSTA según tu lógica)
           const orderIdFromServer = await createOrderAction({
@@ -94,42 +93,40 @@ export default function CartPage({ user }: CartPageProps) {
     preCreateOrder();
   }, [items, pendingOrderId, userId, ownerPhone]);
 
-  // 2. Función para enviar el pedido vía Cloud API (sin URL de WhatsApp en el Front)
+  // 2. Función para enviar el pedido vía Cloud API y, en caso de error, redirigir con el enlace manual de WhatsApp
   async function handleSendWhatsApp() {
     setLoading(true);
+  
+    // Aseguramos construir el mensaje de WhatsApp desde el principio
+    const orderDetails = items
+      .map(
+        (item) =>
+          `${item.name} - Talla: ${item.size}, Color: ${item.color}, Cantidad: ${item.quantity}`
+      )
+      .join("\n");
+    
+    // Se usa la orden pendiente o se crea una nueva
+    let orderIdToUse = pendingOrderId;
+    if (!orderIdToUse) {
+      const cartItems = items.map((item) => ({
+        productId: item.id.split("_")[0],
+        quantity: item.quantity,
+        size: item.size,
+        color: item.color,
+        price: item.price,
+        name: item.name,
+      }));
+      orderIdToUse = await createOrderAction({
+        userId,
+        items: cartItems,
+        phoneNumber: ownerPhone,
+      });
+    }
+  
+    // Construir el mensaje a enviar
+    const textToSend = `Hola, me gustaría hacer este pedido!\nPedido con ID: ${orderIdToUse}\n\n${orderDetails}\n\nTotal: $${total.toLocaleString("es-AR")}`;
+  
     try {
-      let orderIdToUse = pendingOrderId;
-      // Si no hay orden pendiente, la creamos
-      if (!orderIdToUse) {
-        const cartItems = items.map((item) => ({
-          productId: item.id.split("_")[0],
-          quantity: item.quantity,
-          size: item.size,
-          color: item.color,
-          price: item.price,
-          name: item.name,
-        }));
-        orderIdToUse = await createOrderAction({
-          userId,
-          items: cartItems,
-          phoneNumber: ownerPhone,
-        });
-      }
-
-      // // Construir el texto con los datos del carrito
-      // const orderDetails = items
-      //   .map(
-      //     (item) =>
-      //       `${item.name} - Talla: ${item.size}, Color: ${item.color}, Cant: ${item.quantity}`
-      //   )
-      //   .join("\n");
-
-      // const textToSend =
-      //   `Hola, me gustaría hacer este pedido!\n` +
-      //   `Pedido con ID: ${orderIdToUse}\n\n${orderDetails}\n\n` +
-      //   `Total: $${total.toLocaleString("es-AR")}`;
-
-      // Llamamos a nuestro endpoint en /api/send-whatsapp
       const res = await fetch("/api/send-whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,25 +139,31 @@ export default function CartPage({ user }: CartPageProps) {
         }),
       });
   
-
+      // Si la respuesta no es exitosa, se redirige al enlace manual de WhatsApp
       if (!res.ok) {
+        // Puedes eliminar este console.error si lo consideras innecesario
         const errorData = await res.json();
-        console.error("Error al enviar mensaje:", errorData);
-        alert("No se pudo enviar tu pedido por WhatsApp.");
+        console.error("Error al enviar mensaje vía API:", errorData);
+        const whatsappUrl = `https://api.whatsapp.com/send?phone=${ownerPhone}&text=${encodeURIComponent(textToSend)}`;
+        window.location.href = whatsappUrl;
         return;
       }
-
-      // Éxito
+  
+      // En caso de éxito, se limpia el carrito y se redirige a perfil
       clearCart();
       router.push("/perfil");
-      alert(`Pedido #${orderIdToUse} enviado correctamente por WhatsApp.`);
+      // Opcional: podrías notificar que se envió correctamente sin interrumpir la redirección
+      // alert(`Pedido #${orderIdToUse} enviado correctamente por WhatsApp.`);
     } catch (error: any) {
       console.error("Error al enviar pedido:", error.message);
-      alert("Ocurrió un error al enviar el pedido.");
+      // En el catch, se redirige directamente al enlace manual de WhatsApp
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=${ownerPhone}&text=${encodeURIComponent(textToSend)}`;
+      window.location.href = whatsappUrl;
     } finally {
       setLoading(false);
     }
   }
+  
 
   // Recalcular totales cuando cambian los items
   useEffect(() => {
