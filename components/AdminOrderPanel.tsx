@@ -153,7 +153,6 @@ export default function AdminOrdersPanel() {
         .eq("order_id", order.id);
 
       if (itemsError) throw itemsError;
-      console.log(items);
 
       // Formatear los items con la información del producto
       const formattedItems = items.map((item) => ({
@@ -349,7 +348,6 @@ export default function AdminOrdersPanel() {
       </div>
     );
   }
-  console.log(filteredOrders);
 
   if (error) {
     return (

@@ -84,7 +84,6 @@ export async function createOrderAction(
   props: SendWhatsAppProps
 ): Promise<string> {
   const { userId, items, phoneNumber } = props;
-  console.log(`Items: ${JSON.stringify(items, null, 2)}`);
 
   // 1) Conectar a Supabase
   const supabase = await createClient();

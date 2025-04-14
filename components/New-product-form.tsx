@@ -161,7 +161,6 @@ export default function NewProductForm() {
       return;
     }
 
-    console.log("Producto insertado:", insertData);
     setFormError(null);
     alert("¡Producto creado con éxito!");
     formRef.current.reset();

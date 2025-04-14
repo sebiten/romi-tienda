@@ -1,17 +1,16 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback, memo } from "react"
-import { useParams } from "next/navigation"
-import Image from "next/image"
-import Link from "next/link"
-import { ChevronRight, Check, AlertCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { AddToCartButton } from "@/components/AddToCartButton"
-import { createClient } from "@/utils/supabase/client"
-import { Product } from "@/lib/types"
-
+import { useState, useEffect, useCallback, memo } from "react";
+import { useParams } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { ChevronRight, Check, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { AddToCartButton } from "@/components/AddToCartButton";
+import { createClient } from "@/utils/supabase/client";
+import { Product } from "@/lib/types";
 
 // Memoized product image gallery component
 const ProductImageGallery = memo(
@@ -21,10 +20,10 @@ const ProductImageGallery = memo(
     activeImage,
     setActiveImage,
   }: {
-    images: string[] | undefined
-    title: string
-    activeImage: number
-    setActiveImage: (index: number) => void
+    images: string[] | undefined;
+    title: string;
+    activeImage: number;
+    setActiveImage: (index: number) => void;
   }) => (
     <div className="space-y-4">
       <div className="aspect-square relative rounded-lg overflow-hidden bg-white border border-beige-200">
@@ -63,10 +62,10 @@ const ProductImageGallery = memo(
         </div>
       )}
     </div>
-  ),
-)
+  )
+);
 
-ProductImageGallery.displayName = "ProductImageGallery"
+ProductImageGallery.displayName = "ProductImageGallery";
 
 // Memoized option selector component
 const OptionSelector = memo(
@@ -76,10 +75,10 @@ const OptionSelector = memo(
     selectedOption,
     onChange,
   }: {
-    label: string
-    options: string[]
-    selectedOption: string
-    onChange: (option: string) => void
+    label: string;
+    options: string[];
+    selectedOption: string;
+    onChange: (option: string) => void;
   }) => (
     <div>
       <h3 className="text-sm font-medium text-beige-700 mb-3">{label}</h3>
@@ -100,10 +99,10 @@ const OptionSelector = memo(
         ))}
       </div>
     </div>
-  ),
-)
+  )
+);
 
-OptionSelector.displayName = "OptionSelector"
+OptionSelector.displayName = "OptionSelector";
 
 // Loading skeleton component
 const ProductSkeleton = () => (
@@ -134,7 +133,7 @@ const ProductSkeleton = () => (
       </div>
     </div>
   </div>
-)
+);
 
 // Error state component
 const ErrorState = ({ error }: { error: string | null }) => (
@@ -143,84 +142,94 @@ const ErrorState = ({ error }: { error: string | null }) => (
       <div className="flex justify-center mb-4">
         <AlertCircle className="h-12 w-12 text-beige-800" />
       </div>
-      <h1 className="text-2xl font-serif text-beige-800 mb-4">Producto no encontrado</h1>
-      <p className="text-beige-600 mb-6">{error || "No pudimos encontrar el producto que estás buscando."}</p>
+      <h1 className="text-2xl font-serif text-beige-800 mb-4">
+        Producto no encontrado
+      </h1>
+      <p className="text-beige-600 mb-6">
+        {error || "No pudimos encontrar el producto que estás buscando."}
+      </p>
       <Button asChild className="bg-beige-700 hover:bg-beige-800 text-beige-50">
         <Link href="/tienda">Volver a la tienda</Link>
       </Button>
     </div>
   </div>
-)
+);
 
 // Main component
 export default function ProductPage() {
-  const params = useParams()
-  const productId = params.id as string
+  const params = useParams();
+  const productId = params.id as string;
 
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedSize, setSelectedSize] = useState("")
-  const [selectedColor, setSelectedColor] = useState("")
-  const [activeImage, setActiveImage] = useState(0)
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+  const [activeImage, setActiveImage] = useState(0);
 
   // Fetch product data
   useEffect(() => {
     const fetchProduct = async () => {
-      if (!productId) return
+      if (!productId) return;
 
       try {
-        setLoading(true)
-        const supabase = createClient()
+        setLoading(true);
+        const supabase = createClient();
 
-        const { data, error } = await supabase.from("products").select("*").eq("id", productId).single()
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", productId)
+          .single();
 
         if (error) {
-          throw new Error(error.message)
+          throw new Error(error.message);
         }
 
-        setProduct(data)
+        setProduct(data);
 
         // Set default selections if available
         if (data.sizes && data.sizes.length > 0) {
-          setSelectedSize(data.sizes[0])
+          setSelectedSize(data.sizes[0]);
         }
 
         if (data.colors && data.colors.length > 0) {
-          setSelectedColor(data.colors[0])
+          setSelectedColor(data.colors[0]);
         }
       } catch (err) {
-        console.error("Error fetching product:", err)
-        setError("No se pudo cargar el producto. Por favor, inténtalo de nuevo.")
+        console.error("Error fetching product:", err);
+        setError(
+          "No se pudo cargar el producto. Por favor, inténtalo de nuevo."
+        );
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchProduct()
-  }, [productId])
+    fetchProduct();
+  }, [productId]);
 
   // Handle option changes
   const handleSizeChange = useCallback((size: string) => {
-    setSelectedSize(size)
-  }, [])
+    setSelectedSize(size);
+  }, []);
 
   const handleColorChange = useCallback((color: string) => {
-    setSelectedColor(color)
-  }, [])
+    setSelectedColor(color);
+  }, []);
 
   const handleImageChange = useCallback((index: number) => {
-    setActiveImage(index)
-  }, [])
+    setActiveImage(index);
+  }, []);
 
   // Render loading state
   if (loading) {
-    return <ProductSkeleton />
+    return <ProductSkeleton />;
   }
 
   // Render error state
   if (error || !product) {
-    return <ErrorState error={error} />
+    return <ErrorState error={error} />;
   }
 
   return (
@@ -233,7 +242,10 @@ export default function ProductPage() {
               Inicio
             </Link>
             <ChevronRight className="w-3 h-3 mx-2" />
-            <Link href="/tienda" className="hover:text-beige-800 transition-colors">
+            <Link
+              href="/tienda"
+              className="hover:text-beige-800 transition-colors"
+            >
               Tienda
             </Link>
             <ChevronRight className="w-3 h-3 mx-2" />
@@ -249,15 +261,20 @@ export default function ProductPage() {
             activeImage={activeImage}
             setActiveImage={handleImageChange}
           />
-
           {/* Product details */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-serif text-beige-800 mb-2">{product.title}</h1>
-              {product.description && <p className="text-beige-600">{product.description}</p>}
+              <h1 className="text-3xl font-serif text-beige-800 mb-2">
+                {product.title}
+              </h1>
+              {product.description && (
+                <p className="text-beige-600">{product.description}</p>
+              )}
 
               <div className="mt-4 flex items-center">
-                <span className="text-2xl font-medium text-beige-800">${product.price?.toLocaleString("es-AR")}</span>
+                <span className="text-2xl font-medium text-beige-800">
+                  ${product.price?.toLocaleString("es-AR")}
+                </span>
                 {product.price && product.price > product.price && (
                   <span className="ml-2 text-lg line-through text-beige-500">
                     ${product.price.toLocaleString("es-AR")}
@@ -322,5 +339,5 @@ export default function ProductPage() {
         </div>
       </div>
     </main>
-  )
+  );
 }

@@ -113,7 +113,7 @@ export default async function OrderDetailPage(props: {
                         {item.product?.images && (
                           <div className="h-16 w-16 rounded-md overflow-hidden bg-beige-100 flex-shrink-0">
                             <img
-                              src={item.product.images || "/placeholder.svg"}
+                              src={item.product.images[0]}
                               alt={item.product.title || "Producto"}
                               className="h-full w-full object-cover"
                             />
