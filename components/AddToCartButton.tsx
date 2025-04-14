@@ -8,8 +8,8 @@ import { useCartStore } from "@/app/store/cartStore"
 
 interface AddToCartButtonProps {
   product: Product
-  selectedSize: string
-  selectedColor: string
+  selectedSize: string | null
+  selectedColor: string | null
   className?: string
 }
 
