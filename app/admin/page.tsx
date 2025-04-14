@@ -18,15 +18,12 @@ export default async function AdminDashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return redirect("/sign-in");
-  }
 
   // Verificar si el usuario es administrador
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("isadmin")
-    .eq("id", user.id)
+    .eq("id", user?.id)
     .single();
 
   if (error || !profile || !profile.isadmin) {

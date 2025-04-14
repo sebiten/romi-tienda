@@ -27,9 +27,6 @@ export default async function Perfil() {
   } = await supabase.auth.getUser();
 
   // Verificar autenticación
-  if (!user) {
-    return redirect("/sign-in");
-  }
 
   // extraer el userid de la tabla public.profiles
   const { data: profileData, error } = await supabase
@@ -88,6 +85,9 @@ export default async function Perfil() {
     console.error("Items de la orden no encontrados");
   }
 
+  if (!user || error || !profileData) {
+    return redirect("/sign-in");
+  }
   return (
     <main className="min-h-screen bg-beige-50">
       {/* Header decorative wave */}

@@ -15,39 +15,32 @@ const playfair = Playfair_Display({
 
 export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  // Get user for Navbar
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 3) Consultamos la tabla profiles para ver isadmin
-  const { data: profileData, error: isAdminError } = await supabase
-    .from("profiles")
-    .select("isadmin")
-    .eq("id", user?.id)
-    .single();
+  let isAdmin = false;
 
-  if (isAdminError || !profileData) {
-    // Si no se pudo obtener el perfil, o no existe
-    redirect("/");
+  if (user?.id) {
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("isadmin")
+      .eq("id", user.id)
+      .single();
+
+    isAdmin = profileData?.isadmin ?? false;
   }
-  const isAdmin = profileData.isadmin;
 
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${playfair.variable} font-sans antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <Navbar user={user} isAdmin={isAdmin} />
-          <main> {children}</main>
+          <main>{children}</main>
         </ThemeProvider>
         <Footer />
       </body>
