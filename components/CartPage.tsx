@@ -165,7 +165,7 @@ export default function CartPage({ user }: CartPageProps) {
   }
   
 
-  // Recalcular totales cuando cambian los items
+  // Recalcular totales cuando cambian los items 
   useEffect(() => {
     calculateTotals();
   }, [items, calculateTotals]);
