@@ -7,12 +7,12 @@ interface EditProductPageProps {
   params: { id: string };
 }
 
-export default async function EditProductPage({
-  params,
-}: EditProductPageProps) {
+export default async function EditProductPage(props: {
+  params: Promise<{ id: string }>;
+}) {
+  const params = await props.params;
   const supabase = await createClient();
-  // En lugar de usar directamente params.id
-  const { id } = await params;
+  const { id } = params;
   if (!id || id.length !== 36) {
     console.error("ID de producto inválido:", id);
     notFound();
