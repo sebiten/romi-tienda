@@ -300,7 +300,7 @@ export default async function Perfil() {
                           Aún no has realizado ningún pedido.
                         </p>
                         <Button className="bg-beige-700 hover:bg-beige-800 text-beige-50">
-                          <Link href="/shop">Ir a la tienda</Link>
+                          <Link href="/tienda">Ir a la tienda</Link>
                         </Button>
                       </div>
                     )}
