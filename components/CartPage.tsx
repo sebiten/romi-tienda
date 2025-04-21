@@ -158,7 +158,7 @@ export default function CartPage({ user }: CartPageProps) {
   const [orderId, setOrderId] = useState<string | null>(null);
 
   // Business phone number (international format, without '+')
-  const ownerPhone = "543886575936";
+  const ownerPhone = "543872226885";
 
   // Calculate totals when items change
   useEffect(() => {
@@ -207,6 +207,7 @@ export default function CartPage({ user }: CartPageProps) {
       const whatsappUrl = `https://api.whatsapp.com/send?phone=${ownerPhone}&text=${encodeURIComponent(textToSend)}`;
 
       // Attempt to open in new tab (desktop experience), fallback to same tab (mobile-safe)
+      // Intentar abrir WhatsApp
       const newWindow = window.open(whatsappUrl, "_blank");
       if (
         !newWindow ||
@@ -215,6 +216,12 @@ export default function CartPage({ user }: CartPageProps) {
       ) {
         window.location.href = whatsappUrl;
       }
+
+      // Clear cart y redirigir después de un delay
+      setTimeout(() => {
+        clearCart();
+        router.push("/perfil");
+      }, 2500); // le damos 1.5 segundos antes de redirigir
 
       // Clear cart and redirect
       clearCart();
