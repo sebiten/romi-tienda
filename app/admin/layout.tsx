@@ -92,6 +92,16 @@ export default async function AdminLayout({
               <span>Editar Producto</span>
             </Link>
           </Button>
+          <Button
+            asChild
+            variant="ghost"
+            className="w-full justify-start text-beige-700 hover:text-beige-800 hover:bg-beige-100"
+          >
+            <Link href="/admin/pedidos">
+              <Settings className="w-4 h-4 mr-2" />
+              <span>Todos los pedidos</span>
+            </Link>
+          </Button>
         </nav>
 
         <div className="mt-auto pt-6">
