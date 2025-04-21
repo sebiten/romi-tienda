@@ -61,6 +61,26 @@ export default function Hero() {
             <Link href="/tienda">Explorar Colección</Link>
           </Button>
 
+          {/* Login/Sign-up prompt */}
+          <p className="text-sm text-[#5D4B3C]/90 font-light text-center max-w-md">
+            ¿Quieres hacer una compra?{" "}
+            <br></br>
+            <a
+              href="/sign-in"
+              className="underline hover:text-[#8A7B68] transition-colors"
+            >
+              Inicia sesión
+            </a>{" "}
+            o{" "}
+            <a
+              href="/sign-up"
+              className="underline hover:text-[#8A7B68] transition-colors"
+            >
+              crea una cuenta
+            </a>{" "}
+            para comenzar.
+          </p>
+
           {/* Scroll indicator */}
           <div className="hidden md:flex flex-col items-center text-[#5D4B3C]/70 animate-bounce animation-delay-700">
             <span className="text-xs tracking-widest uppercase mb-2">Descubre más</span>
@@ -68,6 +88,7 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
       {/* Decorative elements */}
       <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#F5F1EA]/30 to-transparent" />
       <div className="absolute -bottom-8 -right-8 w-64 h-64 bg-[#D6C7B0]/20 rounded-full blur-3xl" />
