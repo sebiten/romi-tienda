@@ -221,7 +221,7 @@ export default function CartPage({ user }: CartPageProps) {
       setTimeout(() => {
         clearCart();
         router.push("/perfil");
-      }, 2500); // le damos 1.5 segundos antes de redirigir
+      }, 3500); // le damos 1.5 segundos antes de redirigir
 
       // Clear cart and redirect
       clearCart();
