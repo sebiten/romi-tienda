@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Order, OrderItem } from "@/lib/types";
+import { markOrderAsPaidAction } from "../../actions";
 
 export default async function OrderDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -28,9 +29,16 @@ export default async function OrderDetailPage(props: {
     .eq("id", user.id)
     .single();
 
-  if (isAdminError || !profileData) {
+  const { data: profileBuyerInfo, error: profileBuyerInfoError } =
+    await supabase
+      .from("profiles")
+      .select("username, user_phone")
+      .eq("id", user.id)
+      .single();
+
+  if (profileBuyerInfoError || !profileData) {
     // Si no se pudo obtener el perfil, o no existe
-    redirect("/");
+    console.log("Error fetching profile data:", profileBuyerInfoError);
   }
   // Fetch the order with all related information
   const { data: order, error } = (await supabase
@@ -81,7 +89,7 @@ export default async function OrderDetailPage(props: {
               className={`px-2 py-0.5 text-xs rounded-full ${
                 order.status === "pendiente-pago"
                   ? "bg-amber-100 text-amber-800"
-                  : order.status === "completado"
+                  : order.status === "pagado"
                     ? "bg-green-100 text-green-800"
                     : order.status === "cancelado"
                       ? "bg-red-100 text-red-800"
@@ -188,20 +196,15 @@ export default async function OrderDetailPage(props: {
               </CardHeader>
 
               <CardContent>
-                {order.profiles ? (
+                {profileBuyerInfo ? (
                   <div>
                     <p className="font-medium text-beige-800">
-                      {order.profiles.first_name}{" "}
-                      {order.profiles.last_name || ""}
+                      {profileBuyerInfo.username || "Usuario Anónimo"}
                     </p>
                     <p className="text-sm text-beige-600 mt-1">
-                      {order.profiles.email}
+                      {profileBuyerInfo.user_phone || "Nombre no disponible"}
                     </p>
-                    {order.profiles.phone && (
-                      <p className="text-sm text-beige-600 mt-1">
-                        {order.profiles.phone}
-                      </p>
-                    )}
+
                     <Link
                       href={`/admin/usuarios/${order.user_id}`}
                       className="text-sm text-beige-800 underline mt-3 inline-block hover:text-beige-600"
@@ -261,11 +264,26 @@ export default async function OrderDetailPage(props: {
             variant="outline"
             className="border-beige-200 text-beige-800 hover:bg-beige-100"
           >
-            Cancelar Pedido
+            Cancelar Pedido (falta agregar la acción)
           </Button>
-          <Button className="bg-beige-800 text-white hover:bg-beige-900">
-            Marcar como Completado
-          </Button>
+          <form
+            action={async (formData) => {
+              "use server";
+              const orderId = formData.get("order_id")?.toString();
+              if (orderId) {
+                await markOrderAsPaidAction(orderId);
+              }
+            }}
+          >
+            <input type="hidden" name="order_id" value={order.id} />
+            <Button
+              type="submit"
+              variant="outline"
+              className="border-beige-200 text-beige-800 hover:bg-beige-100"
+            >
+              Marcar como Pagado
+            </Button>
+          </form>
         </div>
       </div>
     </main>

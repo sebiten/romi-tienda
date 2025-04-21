@@ -116,7 +116,7 @@ export default async function AdminDashboardPage() {
                             className={`px-2 py-0.5 text-xs rounded-full ${
                               order.status === "pendiente-pago"
                                 ? "bg-amber-100 text-amber-800"
-                                : order.status === "completado"
+                                : order.status === "pagado"
                                   ? "bg-green-100 text-green-800"
                                   : order.status === "cancelado"
                                     ? "bg-red-100 text-red-800"

@@ -75,15 +75,8 @@ export default async function Perfil() {
     .from("order_items")
     .select("*")
     .eq("order_id", orders![0]?.id);
-  if (orderItemsError) {
-    console.error(
-      "Error al cargar los items de la orden:",
-      orderItemsError.message
-    );
-  }
-  if (!orderItems) {
-    console.error("Items de la orden no encontrados");
-  }
+
+
 
   if (!user || error || !profileData) {
     return redirect("/sign-in");

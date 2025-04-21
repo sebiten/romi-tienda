@@ -126,7 +126,7 @@ export async function createOrderAction(
   return order.id;
 }
 
-// action para editar un producto 
+// action para editar un producto
 export async function updateProductAction(formData: FormData) {
   "use server";
 
@@ -159,4 +159,25 @@ export async function updateProductAction(formData: FormData) {
 
   // Redirigir después de la actualización
   redirect("/admin/edit");
+}
+
+// action para marcar un pedido como pagado
+
+export async function markOrderAsPaidAction(orderId: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("orders")
+    .update({ status: "pagado" })
+    .eq("id", orderId);
+
+  if (error) {
+    throw new Error("No se pudo actualizar el estado del pedido.");
+  }
+
+  // Revalidar la página para reflejar los cambios
+  revalidatePath("/admin/pedidos");
+  revalidatePath("/perfil/pedidos");
+
+  return true;
 }

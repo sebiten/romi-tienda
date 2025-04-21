@@ -70,7 +70,7 @@ export default async function OrderDetailPage(props: {
               className={`px-2 py-0.5 text-xs rounded-full ${
                 order.status === "pendiente-pago"
                   ? "bg-amber-100 text-amber-800"
-                  : order.status === "completado"
+                  : order.status === "pagado"
                     ? "bg-green-100 text-green-800"
                     : order.status === "cancelado"
                       ? "bg-red-100 text-red-800"
@@ -169,42 +169,7 @@ export default async function OrderDetailPage(props: {
           </div>
 
           <div>
-            <Card className="bg-white border-beige-200 shadow-sm mb-6">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl text-beige-800">
-                  Cliente
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent>
-                {order.profiles ? (
-                  <div>
-                    <p className="font-medium text-beige-800">
-                      {order.profiles.first_name}{" "}
-                      {order.profiles.last_name || ""}
-                    </p>
-                    <p className="text-sm text-beige-600 mt-1">
-                      {order.profiles.email}
-                    </p>
-                    {order.profiles.phone && (
-                      <p className="text-sm text-beige-600 mt-1">
-                        {order.profiles.phone}
-                      </p>
-                    )}
-                    <Link
-                      href={`/admin/usuarios/${order.user_id}`}
-                      className="text-sm text-beige-800 underline mt-3 inline-block hover:text-beige-600"
-                    >
-                      Ver perfil completo
-                    </Link>
-                  </div>
-                ) : (
-                  <p className="text-center py-2 text-beige-600">
-                    Información de cliente no disponible
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+       
 
             <Card className="bg-white border-beige-200 shadow-sm">
               <CardHeader className="pb-2">
@@ -245,17 +210,7 @@ export default async function OrderDetailPage(props: {
           </div>
         </div>
 
-        <div className="mt-8 flex gap-4 justify-end">
-          <Button
-            variant="outline"
-            className="border-beige-200 text-beige-800 hover:bg-beige-100"
-          >
-            Cancelar Pedido
-          </Button>
-          <Button className="bg-beige-800 text-white hover:bg-beige-900">
-            Marcar como Completado
-          </Button>
-        </div>
+  
       </div>
     </main>
   );

@@ -6,8 +6,6 @@ import { Package, Users, ShoppingBag, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { CartItem, Order, OrderItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { boolean } from "zod";
-import { NextPage } from "next";
 
 // Add this helper function to calculate the total
 
@@ -30,23 +28,10 @@ export default async function PedidosPage() {
     return redirect("/");
   }
 
-  // Obtener estadísticas básicas
-  const { data: pendingOrders } = await supabase
-    .from("orders")
-    .select("id", { count: "exact" })
-    .eq("status", "pendiente");
-
-  const { data: totalUsers } = await supabase
-    .from("profiles")
-    .select("id", { count: "exact" });
-
-  const { data: totalProducts } = await supabase
-    .from("products")
-    .select("id", { count: "exact" });
   // recent order con paginacion
   const { data: recentOrders } = await supabase
     .from("orders")
-    .select("*")
+    .select("*, profiles(username, user_phone), order_items(quantity)")
     .order("created_at", { ascending: false })
     .limit(7);
 
@@ -68,22 +53,31 @@ export default async function PedidosPage() {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-beige-800">
-                          Pedido #{order.id.slice(-6)}
-                        </p>
-                        <span
-                          className={`px-2 py-0.5 text-xs rounded-full ${
-                            order.status === "pendiente-pago"
-                              ? "bg-amber-100 text-amber-800"
-                              : order.status === "completado"
-                                ? "bg-green-100 text-green-800"
-                                : order.status === "cancelado"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {order.status}
-                        </span>
+                        <div>
+                          <p className="font-medium text-beige-800">
+                            Pedido #{order.id.slice(-4)}
+                          </p>
+                          <p className="font-medium text-beige-800">
+                            Persona: {order.profiles?.username}
+                          </p>
+                          <p className="font-medium text-beige-800">
+                            Telefono: {order.profiles?.user_phone}
+                          </p>
+                       
+                          <span
+                            className={`px-2 py-0.5 text-xs rounded-full ${
+                              order.status === "pendiente-pago"
+                                ? "bg-amber-100 text-amber-800"
+                                : order.status === "pagado"
+                                  ? "bg-green-100 text-green-800"
+                                  : order.status === "cancelado"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {order.status}
+                          </span>
+                        </div>
                       </div>
                       {order.profiles && (
                         <p className="text-sm text-beige-600 mt-1">
@@ -140,15 +134,16 @@ export default async function PedidosPage() {
                       </div>
                     </div>
                   )}
-
-                  <Button className="flex justify-between items-center">
-                    <Link
-                      href={`/admin/pedidos/${order.id}`}
-                      className="text-xs text-beige-800 underline hover:text-beige-600"
-                    >
-                      Ver detalles completos
-                    </Link>
-                  </Button>
+                  <form>
+                    <Button className="flex justify-between items-center">
+                      <Link
+                        href={`/admin/pedidos/${order.id}`}
+                        className="text-xs text-beige-800 underline hover:text-beige-600"
+                      >
+                        Ver detalles completos
+                      </Link>
+                    </Button>
+                  </form>
                 </div>
               ))}
             </div>
@@ -204,3 +199,10 @@ function calculateOrderTotal(order: Order): string {
     }, 0)
     .toFixed(2);
 }
+
+function countTotalItems(order: Order): number {
+    if (!order.items || order.items.length === 0) return 0;
+  
+    return order.items.reduce((total, item) => total + (item.quantity || 0), 0);
+  }
+  

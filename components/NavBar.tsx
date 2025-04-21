@@ -49,9 +49,9 @@ export default function Navbar({ user, isAdmin }: NavbarProps) {
           <p>Envío gratis en pedidos superiores a $999 ARG</p>
           <div className="flex items-center mt-1 sm:mt-0">
             <span className="font-medium">Teléfono: </span>
-            <a href="tel:+123456789" className="ml-1 hover:underline">
-              +123 456 789
-            </a>
+            <p className="ml-1 hover:underline">
+              +54 3872226885
+            </p>
           </div>
         </div>
       </div>

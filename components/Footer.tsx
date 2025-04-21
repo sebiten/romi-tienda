@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Instagram, Facebook, Twitter, Mail, MapPin, Phone } from "lucide-react"
+import { Instagram, Facebook, Twitter, Mail, MapPin, Phone, InstagramIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -66,7 +66,7 @@ export default function Footer() {
               <Link href="/tienda" className="text-beige-600 hover:text-beige-800 transition-colors">
                 Tienda
               </Link>
-              <Link href="/about" className="text-beige-600 hover:text-beige-800 transition-colors">
+              {/* <Link href="/about" className="text-beige-600 hover:text-beige-800 transition-colors">
                 Nosotros
               </Link>
               <Link href="/blog" className="text-beige-600 hover:text-beige-800 transition-colors">
@@ -74,7 +74,7 @@ export default function Footer() {
               </Link>
               <Link href="/contact" className="text-beige-600 hover:text-beige-800 transition-colors">
                 Contacto
-              </Link>
+              </Link> */}
             </nav>
           </div>
 
@@ -88,11 +88,11 @@ export default function Footer() {
               </div>
               <div className="flex items-start">
                 <Phone className="w-5 h-5 text-beige-500 mt-0.5 mr-2 flex-shrink-0" />
-                <span className="text-beige-600 text-sm">+54 (123) 456-7890</span>
+                <span className="text-beige-600 text-sm"> +54 3872226885</span>
               </div>
               <div className="flex items-start">
-                <Mail className="w-5 h-5 text-beige-500 mt-0.5 mr-2 flex-shrink-0" />
-                <span className="text-beige-600 text-sm">info@almalucia.com</span>
+                <InstagramIcon className="w-5 h-5 text-beige-500 mt-0.5 mr-2 flex-shrink-0" />
+                <span className="text-beige-600 text-sm">@almalucia08</span>
               </div>
             </div>
           </div>

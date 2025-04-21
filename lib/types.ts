@@ -36,10 +36,11 @@ export type OrderItem = {
 
 export type Profile = {
   id: string;
+  username: string;
   first_name?: string;
   last_name?: string;
   email?: string;
-  phone?: string;
+  user_phone?: string;
   // Add other profile fields as needed
 }
 export type Order = {

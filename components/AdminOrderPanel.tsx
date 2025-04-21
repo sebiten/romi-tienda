@@ -61,7 +61,7 @@ interface OrderItem {
 interface Order {
   id: string;
   user_id: string;
-  status: "pendiente" | "procesando" | "completado" | "cancelado";
+  status: "pendiente" | "procesando" | "pagado" | "cancelado";
   created_at: string;
   updated_at: string;
   total: number;
@@ -310,13 +310,13 @@ export default function AdminOrdersPanel() {
             Procesando
           </Badge>
         );
-      case "completado":
+      case "pagado":
         return (
           <Badge
             variant="outline"
             className="bg-green-100 text-green-700 border-green-200"
           >
-            Completado
+            pagado
           </Badge>
         );
       case "cancelado":
@@ -410,10 +410,10 @@ export default function AdminOrdersPanel() {
                 Pendientes
               </TabsTrigger>
               <TabsTrigger
-                value="completado"
+                value="pagado"
                 className="py-2 px-4 data-[state=active]:bg-white data-[state=active]:text-beige-800 data-[state=active]:shadow-none rounded-none border-b-2 border-transparent data-[state=active]:border-beige-700"
               >
-                Completados
+                Pagados
               </TabsTrigger>
             </TabsList>
 
@@ -431,8 +431,8 @@ export default function AdminOrdersPanel() {
                       ? "No hay pedidos pendientes para procesar."
                       : activeTab === "procesando"
                         ? "No hay pedidos en proceso actualmente."
-                        : activeTab === "completado"
-                          ? "No hay pedidos completados."
+                        : activeTab === "pagados"
+                          ? "No hay pedidos pagados."
                           : "No se encontraron pedidos con los filtros actuales."}
                   </p>
                 </div>

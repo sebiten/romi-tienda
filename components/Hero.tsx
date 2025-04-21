@@ -1,6 +1,7 @@
 import { ChevronDown, Link } from "lucide-react";
 import { Button } from "./ui/button";
 import Image from "next/image";
+import InstagramSection from "./InstagramSection";
 
 export default function Hero() {
   return (
@@ -67,7 +68,6 @@ export default function Hero() {
           </div>
         </div>
       </div>
-
       {/* Decorative elements */}
       <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#F5F1EA]/30 to-transparent" />
       <div className="absolute -bottom-8 -right-8 w-64 h-64 bg-[#D6C7B0]/20 rounded-full blur-3xl" />
