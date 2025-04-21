@@ -3,7 +3,6 @@ import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { SmtpMessage } from "../smtp-message";
 import { FormMessage, Message } from "@/components/form-message";
 
 export default async function Signup(props: {
@@ -36,7 +35,7 @@ export default async function Signup(props: {
           <Input name="name" placeholder="Jhon Doe" required />
 
           <Label htmlFor="user_phone">Telefono</Label>
-          <Input name="user_phone" placeholder="3886575936" required />
+          <Input name="user_phone" placeholder="38865759223" required />
           <Label htmlFor="password">Contraseña</Label>
           <Input
             type="password"
@@ -51,7 +50,6 @@ export default async function Signup(props: {
           <FormMessage message={searchParams} />
         </div>
       </form>
-      <SmtpMessage />
     </>
   );
 }
