@@ -328,7 +328,7 @@ export default function TiendaPage() {
   const { products, isLoadingProducts, error, fetchProducts } = useCartStore()
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategories, setSelectedCategories] = useState<string[]>(categoryParam ? [categoryParam] : [])
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000])
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 120000])
   const [sortOption, setSortOption] = useState<SortOption>("newest")
   const [searchQuery, setSearchQuery] = useState("")
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
