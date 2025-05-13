@@ -1,4 +1,4 @@
-import { ChevronDown, Link } from "lucide-react";
+import { ChevronDown, Link, ShoppingBag, ShoppingCartIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import Image from "next/image";
 import InstagramSection from "./InstagramSection";
@@ -40,7 +40,9 @@ export default function Hero() {
         {/* Brand name with elegant typography */}
         <h1 className="font-serif text-5xl md:text-7xl font-light tracking-wider mb-6 text-[#5D4B3C] animate-fade-in">
           <span className="inline-block animate-slide-up">Alma</span>
-          <span className="inline-block mx-2 md:mx-4 animate-slide-up animation-delay-150">Lucia</span>
+          <span className="inline-block mx-2 md:mx-4 animate-slide-up animation-delay-150">
+            Lucia
+          </span>
         </h1>
 
         {/* Decorative line */}
@@ -48,23 +50,19 @@ export default function Hero() {
 
         {/* Description with refined typography */}
         <p className="text-lg md:text-xl max-w-2xl text-center mb-10 text-[#5D4B3C]/90 font-light leading-relaxed animate-fade-in animation-delay-300">
-          Descubre las últimas tendencias en ropa oversized para sentirte cómodo y con estilo. Prendas atemporales
-          diseñadas para expresar tu esencia.
+          Descubre las últimas tendencias en ropa oversized para sentirte cómodo
+          y con estilo. Prendas atemporales diseñadas para expresar tu esencia.
         </p>
 
         {/* CTA button with hover effect */}
+        <Button variant={"outline"} className="mb-4 bg-inherit text-[#585043]">
+          <a href="/tienda" className="text-lg font-serif">Ir a la tienda</a>
+          <ShoppingCartIcon className="ml-1"/>
+        </Button>
         <div className="flex flex-col items-center gap-8 animate-fade-in animation-delay-500">
-          <Button
-            size="lg"
-            className="bg-[#A69681] hover:bg-[#8A7B68] text-[#F5F1EA] rounded-full px-8 py-6 text-lg font-light tracking-wide transition-all duration-300 hover:shadow-[0_5px_15px_rgba(166,150,129,0.4)] hover:translate-y-[-2px]"
-          >
-            <Link href="/tienda">Explorar Colección</Link>
-          </Button>
-
           {/* Login/Sign-up prompt */}
           <p className="text-sm text-[#5D4B3C]/90 font-light text-center max-w-md">
-            ¿Quieres hacer una compra?{" "}
-            <br></br>
+            ¿Quieres hacer una compra? <br></br>
             <a
               href="/sign-in"
               className="underline hover:text-[#8A7B68] transition-colors"
@@ -83,7 +81,9 @@ export default function Hero() {
 
           {/* Scroll indicator */}
           <div className="hidden md:flex flex-col items-center text-[#5D4B3C]/70 animate-bounce animation-delay-700">
-            <span className="text-xs tracking-widest uppercase mb-2">Descubre más</span>
+            <span className="text-xs tracking-widest uppercase mb-2">
+              Descubre más
+            </span>
             <ChevronDown size={20} />
           </div>
         </div>

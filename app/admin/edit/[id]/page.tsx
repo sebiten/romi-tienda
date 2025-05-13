@@ -79,7 +79,6 @@ export default async function EditProductPage(props: {
             className="border p-2 w-full"
           />
         </label>
-
         <label className="font-semibold">
           Stock:
           <input
