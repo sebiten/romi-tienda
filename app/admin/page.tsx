@@ -75,21 +75,21 @@ export default async function AdminDashboardPage() {
             title="Usuarios"
             value={totalUsers?.length || 0}
             icon={<Users className="h-8 w-8 text-beige-600" />}
-            href="/admin/usuarios"
+            href="/admin"
           />
 
           <StatsCard
             title="Productos"
             value={totalProducts?.length || 0}
             icon={<ShoppingBag className="h-8 w-8 text-beige-600" />}
-            href="/admin/productos"
+            href="/admin"
           />
 
           <StatsCard
             title="Ventas Totales"
             value="$0"
             icon={<CreditCard className="h-8 w-8 text-beige-600" />}
-            href="/admin/ventas"
+            href="/admin"
           />
         </div>
 
@@ -113,15 +113,14 @@ export default async function AdminDashboardPage() {
                             Pedido #{order.id.slice(-6)}
                           </p>
                           <span
-                            className={`px-2 py-0.5 text-xs rounded-full ${
-                              order.status === "pendiente-pago"
-                                ? "bg-amber-100 text-amber-800"
-                                : order.status === "pagado"
-                                  ? "bg-green-100 text-green-800"
-                                  : order.status === "cancelado"
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-gray-100 text-gray-800"
-                            }`}
+                            className={`px-2 py-0.5 text-xs rounded-full ${order.status === "pendiente-pago"
+                              ? "bg-amber-100 text-amber-800"
+                              : order.status === "pagado"
+                                ? "bg-green-100 text-green-800"
+                                : order.status === "cancelado"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
                           >
                             {order.status}
                           </span>
@@ -189,7 +188,7 @@ export default async function AdminDashboardPage() {
                       >
                         Ver detalles completos
                       </Link>
-                    
+
                     </Button>
                   </div>
                 ))}
