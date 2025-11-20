@@ -24,25 +24,17 @@ export default async function DeleteProductPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Si no hay usuario logueado, redirigimos
   if (!user) {
     redirect("/sign-in");
   }
 
-  // 3) Consultamos la tabla profiles para ver isadmin
   const { data: profileData, error: adminError } = await supabase
     .from("profiles")
     .select("isadmin")
     .eq("id", user.id)
     .single();
 
-  if (adminError || !profileData) {
-    // Si no se pudo obtener el perfil, o no existe
-    redirect("/");
-  }
-
-  // Si no es admin, redirigimos
-  if (!profileData.isadmin) {
+  if (adminError || !profileData || !profileData.isadmin) {
     redirect("/");
   }
 
@@ -59,7 +51,7 @@ export default async function DeleteProductPage() {
   if (!products || products.length === 0) {
     return (
       <main className="p-8 text-center">
-        <h1 className="text-3xl font-bold mb-4">Eliminar Producto</h1>
+        <h1 className="text-3xl font-bold mb-4">Eliminar / Editar Productos</h1>
         <p className="text-muted-foreground">No hay productos disponibles.</p>
       </main>
     );
@@ -67,18 +59,23 @@ export default async function DeleteProductPage() {
 
   return (
     <main className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-center mb-8">Eliminar Producto</h1>
+      <h1 className="text-3xl font-bold text-center mb-8">
+        Administrar Productos
+      </h1>
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 justify-items-center">
         {products.map((product: Product) => (
           <Card
             key={product.id}
             className="w-full max-w-sm flex flex-col items-center text-center p-4"
           >
-            <img
-              src={product.images?.[0] ?? "/placeholder.png"}
-              alt={product.title ?? "Imagen del producto"}
-              className="w-32 h-32 object-cover rounded-md mb-4"
-            />
+            <Link href={`/producto/${product.id}`} className="w-full flex justify-center">
+              <img
+                src={product.images?.[0] ?? "/placeholder.png"}
+                alt={product.title ?? "Imagen del producto"}
+                className="w-32 h-32 object-cover rounded-md mb-4"
+              />
+            </Link>
+
             <CardContent className="flex flex-col gap-2 items-center">
               <div>
                 <h2 className="text-lg font-semibold">{product.title}</h2>
@@ -90,49 +87,59 @@ export default async function DeleteProductPage() {
                     {product.description}
                   </p>
                 )}
-                <p className="text-md font-bold mt-2">${product.price ?? 0}</p>
+                <p className="text-md font-bold mt-2">
+                  ${product.price ?? 0}
+                </p>
               </div>
-              <Link href={`/admin/edit/${product.id}`}>
-                <Button variant="outline" size="sm">
-                  Editar
+
+              <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                {/* Editar datos (título, precio, etc.) */}
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/admin/edit/${product.id}`}>Editar</Link>
                 </Button>
-              </Link>
-              {/* Alerta de confirmación */}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    Eliminar
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta acción no se puede deshacer. Esto eliminará
-                      permanentemente el producto:{" "}
-                      <strong>{product.title}</strong>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <form action={deleteProductAction}>
-                      <input
-                        type="hidden"
-                        name="productId"
-                        value={product.id}
-                      />
-                      <AlertDialogAction
-                        type="submit"
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                      >
-                        Confirmar eliminación
-                      </AlertDialogAction>
-                      import Link from "next/link"; // Dentro del mapeo de
-                      productos:
-                    </form>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+
+                {/* Editar / borrar imágenes */}
+                <Button asChild variant="secondary" size="sm">
+                  <Link href={`/admin/images/${product.id}`}>
+                    Imágenes
+                  </Link>
+                </Button>
+
+                {/* Eliminar producto */}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      Eliminar
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción no se puede deshacer. Esto eliminará
+                        permanentemente el producto:{" "}
+                        <strong>{product.title}</strong>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <form action={deleteProductAction}>
+                        <input
+                          type="hidden"
+                          name="productId"
+                          value={product.id}
+                        />
+                        <AlertDialogAction
+                          type="submit"
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          Confirmar eliminación
+                        </AlertDialogAction>
+                      </form>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </CardContent>
           </Card>
         ))}

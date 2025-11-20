@@ -13,7 +13,6 @@ export default async function NewProductPage() {
     if (!user) {
         redirect("/sign-in");
     }
-
     // 3) Consultamos la tabla profiles para ver isadmin
     const { data: profileData, error } = await supabase
         .from("profiles")

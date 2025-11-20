@@ -32,48 +32,76 @@ const DeleteSchema = z.object({
 
 export async function deleteProductAction(formData: FormData): Promise<void> {
   const productId = formData.get("productId");
+  console.log("deleteProductAction productId recibido:", productId);
+
+  // Validar ID
   const parsed = DeleteSchema.safeParse({ productId });
   if (!parsed.success) {
+    console.error("Error en DeleteSchema:", parsed.error.format());
     throw new Error(parsed.error.issues[0].message);
   }
 
-  const supabase = await createClient();
   const id = parsed.data.productId;
+  const supabase = await createClient();
 
-  // Obtener solo las URLs de imágenes del producto
+  // 1) Traer imágenes del producto
   const { data: product, error: fetchError } = await supabase
     .from("products")
     .select("images")
     .eq("id", id)
     .single();
-  if (fetchError)
-    throw new Error(`Error fetching product: ${fetchError.message}`);
 
-  // Extraer rutas relativas desde la URL pública
-  const publicPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME!}/`;
-  const imageUrls: string[] = product?.images ?? [];
-  const paths: string[] = imageUrls.map((url) => {
-    if (!url.startsWith(publicPrefix)) {
-      throw new Error(`URL inesperada para borrar: ${url}`);
-    }
-    return url.replace(publicPrefix, "");
-  });
-  // Eliminar archivos en Storage si existen
-  if (paths.length) {
-    const { error: storageError } = await supabase.storage
-      .from(BUCKET_NAME!)
-      .remove(paths);
-    if (storageError)
-      throw new Error(`Error removing files: ${storageError.message}`);
+  if (fetchError) {
+    console.error("Error fetching product:", fetchError);
+    throw new Error(`Error fetching product: ${fetchError.message}`);
   }
 
-  // Eliminar registro en la tabla
+  const imageUrls: string[] = product?.images ?? [];
+  console.log("imageUrls:", imageUrls);
+
+  // 2) De URL pública -> nombre de archivo dentro del bucket
+  const paths = imageUrls
+    .map((url) => {
+      const filename = url.split("/").pop();
+      if (!filename) {
+        console.error("No se pudo extraer filename de:", url);
+        return null;
+      }
+      console.log("Filename calculado para borrar:", filename);
+      return filename;
+    })
+    .filter((p): p is string => p !== null);
+
+  console.log("Paths finales a borrar:", paths);
+
+  // 3) Borrar archivos del bucket "product-images" (nombre hardcodeado)
+  if (paths.length > 0) {
+    const { data: removed, error: storageError } = await supabase.storage
+      .from("product-images") // 👈 hardcodeado, sin BUCKET_NAME
+      .remove(paths);
+
+    console.log("Resultado remove():", removed, storageError);
+
+    if (storageError) {
+      console.error("Error removing files from storage:", storageError);
+      throw new Error(`Error removing files: ${storageError.message}`);
+    }
+  } else {
+    console.log("No hay imágenes asociadas para borrar en storage.");
+  }
+
+  // 4) Borrar el producto en la tabla
   const { error: deleteError } = await supabase
     .from("products")
     .delete()
     .eq("id", id);
-  if (deleteError)
+
+  if (deleteError) {
+    console.error("Error deleting product:", deleteError);
     throw new Error(`Error deleting product: ${deleteError.message}`);
+  }
+
+  console.log("Producto eliminado correctamente:", id);
 
   revalidatePath("/admin/delete");
 }
@@ -131,35 +159,52 @@ export async function updateProductAction(formData: FormData) {
   "use server";
 
   const id = formData.get("id") as string;
-  const title = formData.get("title") as string;
+  const title = (formData.get("title") as string)?.trim() || "";
+  const description = (formData.get("description") as string)?.trim() || "";
   const price = parseFloat(formData.get("price") as string);
   const stock = parseInt(formData.get("stock") as string, 10);
-  const sizesRaw = formData.get("sizes") as string;
-  const sizes = sizesRaw.split(",").map((size) => size.trim());
-  const category_id = formData.get("category_id") as string; // Obtener el id de la categoría
+
+  const sizesRaw = (formData.get("sizes") as string) || "";
+  const colorsRaw = (formData.get("colors") as string) || "";
+
+  const sizes = sizesRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const colors = colorsRaw
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
+
+  const category_id = (formData.get("category_id") as string) || null;
 
   const supabase = await createClient();
 
-  // Actualizar el producto en la tabla "products" incluyendo la categoría
   const { error } = await supabase
     .from("products")
     .update({
       title,
+      description,
       price,
       stock,
       sizes,
-      category_id: category_id || null, // asigna null si no se seleccionó una categoría
+      colors,
+      category_id,
     })
     .eq("id", id);
 
   if (error) {
-    console.error("Error actualizando el producto:", error.message);
-    // Aquí podrías manejar el error de forma más amigable (mostrar mensaje en UI, etc.)
+    console.error("Error actualizando producto:", error);
+    throw new Error(error.message);
   }
 
-  // Redirigir después de la actualización
-  redirect("/admin/edit");
+  // 🔥 Redirige correctamente de nuevo al mismo producto
+  // updateProductAction
+  redirect(`/admin/edit/${id}?success=1`);
+
 }
+
 
 // action para marcar un pedido como pagado
 

@@ -35,7 +35,7 @@ const BlackFridayBanner: React.FC<BlackFridayBannerProps> = ({
 
       {/* Contenido central */}
       <div className="relative z-10 text-center px-4 font-thin">
-        <h1 className="text-4xl md:text-6xl font-normal uppercase text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-200 drop-shadow-lg ">
+        <h1 className=" text-4xl md:text-5xl  uppercase text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-200 drop-shadow-lg ">
           {title}
         </h1>
         <p className="mt-4 text-lg md:text-2xl text-beige-200 font-light max-w-2xl mx-auto">
