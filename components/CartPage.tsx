@@ -157,6 +157,52 @@ export default function CartPage({ user }: CartPageProps) {
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
 
+  const handleMercadoPagoCheckout = useCallback(async () => {
+    if (!user) {
+      router.push("/sign-in");
+      return;
+    }
+
+    if (items.length === 0) return;
+
+    setLoading(true);
+
+    try {
+      // Armamos los items para el backend
+      const mpItems = items.map((item) => ({
+        product_id: item.id.split("_")[0], // igual que en createOrderAction
+        title: item.name,
+        quantity: item.quantity,
+        unit_price: item.price,
+        size: item.size,
+        color: item.color,
+      }));
+
+      const res = await fetch("/api/mercadopago/create-preference", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          items: mpItems,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error(data.error || "Error al crear la preferencia de pago");
+        return;
+      }
+
+      // Redirigimos a Mercado Pago
+      window.location.href = data.init_point;
+    } catch (error) {
+      console.error("Error en checkout con Mercado Pago:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, items, router]);
+
   // Business phone number (international format, without '+')
   const ownerPhone = "543872226885";
 
@@ -380,7 +426,28 @@ export default function CartPage({ user }: CartPageProps) {
                 </div>
               </CardContent>
 
-              <CardFooter className="p-6 pt-0">
+              <CardFooter className="p-6 pt-0 flex items-center justify-center flex-col ">
+                {user ? (
+                  <Button
+                    className="w-full bg-blue-400 hover:bg-blue-700 text-beige-50 mb-4"
+                    onClick={handleMercadoPagoCheckout}
+                    disabled={loading || items.length === 0}
+                  >
+                    {loading ? "Redirigiendo..." : "Pagar con Mercado Pago "}
+                  </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="text-center p-3 bg-beige-100 rounded-md text-beige-700">
+                      Debes iniciar sesión para proceder con la compra
+                    </div>
+                    <Button
+                      className="w-full bg-beige-700 hover:bg-beige-800 text-beige-50"
+                      asChild
+                    >
+                      <Link href="/sign-in">Iniciar Sesión</Link>
+                    </Button>
+                  </div>
+                )}
                 {user ? (
                   <Button
                     className="w-full bg-beige-700 hover:bg-beige-800 text-beige-50"

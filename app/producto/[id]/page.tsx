@@ -43,9 +43,8 @@ const ProductImageGallery = memo(
           {images.map((image, index) => (
             <button
               key={index}
-              className={`aspect-square relative rounded-md overflow-hidden border-2 ${
-                activeImage === index ? "border-beige-700" : "border-beige-200"
-              }`}
+              className={`aspect-square relative rounded-md overflow-hidden border-2 ${activeImage === index ? "border-beige-700" : "border-beige-200"
+                }`}
               onClick={() => setActiveImage(index)}
               aria-label={`Ver imagen ${index + 1}`}
             >
@@ -86,11 +85,10 @@ const OptionSelector = memo(
         {options.map((option) => (
           <button
             key={option}
-            className={`h-10 rounded-md border transition-colors ${
-              selectedOption === option
-                ? "bg-beige-800 text-beige-50 border-beige-800"
-                : "bg-white text-beige-700 border-beige-200 hover:border-beige-300"
-            }`}
+            className={`h-10 rounded-md border transition-colors ${selectedOption === option
+              ? "bg-beige-800 text-beige-50 border-beige-800"
+              : "bg-white text-beige-700 border-beige-200 hover:border-beige-300"
+              }`}
             onClick={() => onChange(option)}
             aria-pressed={selectedOption === option}
           >
@@ -325,6 +323,7 @@ export default function ProductPage() {
                 selectedColor={selectedColor}
                 className="w-full py-6 text-lg"
               />
+
             </div>
 
             {/* Additional information */}

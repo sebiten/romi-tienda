@@ -2,13 +2,12 @@ import ProductImagesEditor from "@/components/Product-images-editor";
 import { createClient } from "@/utils/supabase/server";
 import { notFound, redirect } from "next/navigation";
 
-
 interface ImagesPageProps {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }
 
 export default async function ProductImagesPage({ params }: ImagesPageProps) {
-    const { id } = params;
+    const { id } = await params; // 👈 acá lo resolvés como Promise
     const supabase = await createClient();
 
     // Auth
