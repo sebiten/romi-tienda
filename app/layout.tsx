@@ -17,7 +17,7 @@ const playfair = Playfair_Display({
 
 const SITE_NAME = "Alma Lucía";
 const SITE_DESCRIPTION =
-  "Alma Lucía es una tienda de ropa femenina y masculina en Argentina. Moda actual, talles reales y toda la moda.";
+  "Alma Lucía es una tienda de ropa femenina y masculina en Salta-Argentina. Moda actual, talles reales y toda la moda.";
 const SITE_URL = "https://almalucia.shop";
 const OG_IMAGE = `${SITE_URL}/almalucia.webp`; // Imagen principal
 const LOGO_IMAGE = `${SITE_URL}/almalucia.webp`; // También como logo para schema
