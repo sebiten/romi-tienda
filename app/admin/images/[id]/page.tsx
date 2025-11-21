@@ -3,12 +3,15 @@ import { createClient } from "@/utils/supabase/server";
 import { notFound, redirect } from "next/navigation";
 
 interface ImagesPageProps {
-    params: { id: string }; // 👈 ya no es Promise
+    params: Promise<{ id: string }>;
 }
 
-export default async function ProductImagesPage({ params }: ImagesPageProps) {
-    const { id } = params; // 👈 sin await
+export default async function ImagesPage(props: ImagesPageProps) {
+    const { params } = props;
+    const { id } = await params;
     const supabase = await createClient();
+
+    if (!id || id.length !== 36) notFound();
 
     // Auth
     const {
