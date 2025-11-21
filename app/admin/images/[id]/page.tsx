@@ -3,11 +3,11 @@ import { createClient } from "@/utils/supabase/server";
 import { notFound, redirect } from "next/navigation";
 
 interface ImagesPageProps {
-    params: Promise<{ id: string }>;
+    params: { id: string }; // 👈 ya no es Promise
 }
 
 export default async function ProductImagesPage({ params }: ImagesPageProps) {
-    const { id } = await params; // 👈 acá lo resolvés como Promise
+    const { id } = params; // 👈 sin await
     const supabase = await createClient();
 
     // Auth

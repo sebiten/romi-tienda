@@ -427,7 +427,7 @@ export default function CartPage({ user }: CartPageProps) {
               </CardContent>
 
               <CardFooter className="p-6 pt-0 flex items-center justify-center flex-col ">
-                {user ? (
+                {/* {user ? (
                   <Button
                     className="w-full bg-blue-400 hover:bg-blue-700 text-beige-50 mb-4"
                     onClick={handleMercadoPagoCheckout}
@@ -447,7 +447,7 @@ export default function CartPage({ user }: CartPageProps) {
                       <Link href="/sign-in">Iniciar Sesión</Link>
                     </Button>
                   </div>
-                )}
+                )} */}
                 {user ? (
                   <Button
                     className="w-full bg-beige-700 hover:bg-beige-800 text-beige-50"
