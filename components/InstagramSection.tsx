@@ -9,22 +9,22 @@ export default function InstagramSection() {
     {
       id: 1,
       imageUrl: "/ig2.png",
-      link: "https://instagram.com/almalucia08",
+      link: "https://www.instagram.com/almalucia.indumentaria",
     },
     {
       id: 2,
       imageUrl: "/ig3.png",
-      link: "https://instagram.com/almalucia08",
+      link: "https://www.instagram.com/almalucia.indumentaria",
     },
     {
       id: 3,
       imageUrl: "/ig4.png",
-      link: "https://instagram.com/almalucia08",
+      link: "https://www.instagram.com/almalucia.indumentaria",
     },
     {
       id: 4,
       imageUrl: "/ig1.png",
-      link: "https://instagram.com/almalucia08",
+      link: "https://www.instagram.com/almalucia.indumentaria",
     },
   ];
 
