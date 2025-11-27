@@ -1,3 +1,1 @@
-1. PROBAR EL NUEVO WEBHOOK CON SERVICE CLIENT KEY
-2. SI NO FUNCIONA HAY DETALLES QUE VER AHI
-3. PROBAR CON TARJETA REAL
+all good for now, we have to check preferences and webhook

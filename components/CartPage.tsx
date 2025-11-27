@@ -202,8 +202,10 @@ export default function CartPage({ user }: CartPageProps) {
         body: JSON.stringify({
           userId: user.id,
           items: mpItems,
-          shipping: shippingData,
+          shippingData,
+          shippingCost: shipping,   // ✔ ENVÍO REAL desde tu store
         }),
+
       });
 
       const data = await res.json();
