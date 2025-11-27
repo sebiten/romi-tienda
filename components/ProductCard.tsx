@@ -53,7 +53,7 @@ export function ProductCard({ product, getCategoryNameById }: ProductCardProps) 
 
         <CardHeader className="p-4 pb-2">
           <div className="flex justify-between items-start gap-2">
-            <h3 className="font-serif text-lg text-beige-800 line-clamp-2">{product.title}</h3>
+            <h3 className="font-serif text-lg font-bold text-beige-800 line-clamp-2">{product.title}</h3>
             <span className="font-bold text-lg whitespace-nowrap text-beige-700">
               ${product.price?.toLocaleString("es-MX") ?? 0}
             </span>
@@ -68,7 +68,7 @@ export function ProductCard({ product, getCategoryNameById }: ProductCardProps) 
           </Badge>
         </CardContent>
 
-        <CardFooter className="p-4 pt-0 flex flex-col items-start gap-1">
+        <CardFooter className="p-2 pt-0 flex flex-col items-start gap-1">
           {product.sizes && product.sizes.length > 0 && (
             <div className="flex flex-wrap gap-1 w-full">
               <span className="text-xs text-beige-600">Tallas:</span>
@@ -105,13 +105,12 @@ export function ProductCard({ product, getCategoryNameById }: ProductCardProps) 
               </div>
               <div className="w-full bg-beige-100 h-1.5 rounded-full mt-1 overflow-hidden">
                 <div
-                  className={`h-full rounded-full ${
-                    product.stock === 0
-                      ? "bg-beige-300/70 w-0"
-                      : product.stock! <= 5
-                        ? "bg-beige-500 w-1/4"
-                        : "bg-beige-600 w-full"
-                  }`}
+                  className={`h-full rounded-full ${product.stock === 0
+                    ? "bg-beige-300/70 w-0"
+                    : product.stock! <= 5
+                      ? "bg-beige-500 w-1/4"
+                      : "bg-beige-600 w-full"
+                    }`}
                 />
               </div>
             </div>

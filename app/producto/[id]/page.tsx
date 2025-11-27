@@ -308,7 +308,7 @@ export default function ProductPage() {
   }
 
   return (
-    <main className="bg-beige-50 min-h-screen py-12 px-4">
+    <main className="bg-beige-50 min-h-screen overflow-hidden py-12 px-4">
       <div className="container mx-auto max-w-6xl">
         {/* Breadcrumbs */}
         <div className="mb-6">
@@ -340,11 +340,11 @@ export default function ProductPage() {
           {/* Product details */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-serif text-beige-800 mb-2">
+              <h1 className="text-4xl font-serif text-beige-800 mb-2 font-bold">
                 {product.title}
               </h1>
               {product.description && (
-                <p className="text-beige-600">{product.description}</p>
+                <p className="text-beige-600 text-lg">{product.description}</p>
               )}
 
               <div className="mt-4 flex items-center">
@@ -379,7 +379,7 @@ export default function ProductPage() {
             {/* Stock information */}
             <div className="flex items-center">
               {remainingStock > 0 ? (
-                <div className="flex items-center text-green-600">
+                <div className="flex items-center text-green-600 font-medium">
                   <Check className="w-4 h-4 mr-1" />
                   <span>
                     En stock ({remainingStock} disponibles para {selectedColor} - {selectedSize})
@@ -407,7 +407,7 @@ export default function ProductPage() {
             {/* Additional information */}
             <Card className="bg-beige-100/50 border-beige-200 p-4">
               <div className="text-sm text-beige-700 space-y-2">
-                <p>• Envío gratuito en pedidos superiores a $999 ARG</p>
+                <p>• Envío gratuito en pedidos superiores a $80000 ARG</p>
                 <p>• Devoluciones gratuitas dentro de los 30 días</p>
                 <p>• Garantía de calidad en todos nuestros productos</p>
               </div>

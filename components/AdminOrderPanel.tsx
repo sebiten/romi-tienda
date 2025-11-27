@@ -418,7 +418,7 @@ export default function AdminOrdersPanel() {
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-0">
-              
+
               {filteredOrders.length === 0 ? (
                 <div className="text-center py-12 bg-beige-50/50 rounded-lg border border-beige-100">
                   <Package className="w-12 h-12 text-beige-300 mx-auto mb-4" />
@@ -609,7 +609,7 @@ export default function AdminOrdersPanel() {
                 </div>
                 <div className="flex justify-between text-beige-600 mt-1">
                   <span>Envío</span>
-                  <span>$150.00</span>
+                  <span>$2500.00</span>
                 </div>
                 <div className="flex justify-between font-medium text-beige-800 text-lg mt-2">
                   <span>Total</span>

@@ -136,7 +136,6 @@ export const useCartStore = create<CartState>()(
         set({ items: [] })
         get().calculateTotals()
       },
-
       calculateTotals: () => {
         const { items } = get();
 
@@ -149,16 +148,14 @@ export const useCartStore = create<CartState>()(
           0
         );
 
-        // Descuento automático por volumen
+        // Descuento automático por volumen (10% si hay 6+ prendas)
         let discount = 0;
-
         if (totalUnits >= 6) {
-          // 10% de descuento
           discount = subtotal * 0.10;
         }
 
-        // Calcular shipping (gratis si subtotal > 999)
-        const shipping = subtotal > 999 ? 0 : 150;
+        // Costo de envío: $2500 fijo, o gratis si supera $200000
+        const shipping = subtotal > 80000 ? 0 : 2500;
 
         // Total final
         const total = subtotal - discount + shipping;

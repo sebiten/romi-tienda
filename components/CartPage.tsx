@@ -6,17 +6,13 @@ import Image from "next/image";
 import {
   Minus,
   Plus,
-  ShoppingBag,
   Trash2,
-  ArrowLeft,
-  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
-  CardHeader,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -41,7 +37,9 @@ interface CartPageProps {
   user: User | null;
 }
 
-// ================ ITEM DEL CARRITO ================
+/* =====================================
+   🛒 ITEM DEL CARRITO
+===================================== */
 const CartItemRow = memo(
   ({
     item,
@@ -55,7 +53,7 @@ const CartItemRow = memo(
     <li className="p-4 md:p-6">
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Imagen */}
-        <div className="relative w-full sm:w-24 h-24 bg-beige-50 rounded-md overflow-hidden flex-shrink-0">
+        <div className="relative w-full sm:w-24 h-28 bg-beige-100 rounded-xl shadow-sm overflow-hidden flex-shrink-0">
           <Image
             src={item.image || "/placeholder.svg"}
             alt={item.name}
@@ -69,20 +67,21 @@ const CartItemRow = memo(
         {/* Info */}
         <div className="flex-1 flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <h3 className="font-medium text-beige-800">{item.name}</h3>
+            <h3 className="font-medium text-beige-800 text-lg">{item.name}</h3>
 
             <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-beige-600">
               {item.size && <p>Talla: {item.size}</p>}
               {item.color && <p>Color: {item.color}</p>}
             </div>
 
+            {/* Precio en mobile */}
             <div className="sm:hidden mt-2 flex items-center">
               {item.originalPrice && item.originalPrice > item.price && (
                 <span className="text-sm line-through text-beige-500 mr-2">
                   ${item.originalPrice.toLocaleString("es-AR")}
                 </span>
               )}
-              <span className="font-medium text-beige-800">
+              <span className="font-medium text-beige-800 text-lg">
                 ${item.price.toLocaleString("es-AR")}
               </span>
             </div>
@@ -90,45 +89,45 @@ const CartItemRow = memo(
 
           {/* Cantidad */}
           <div className="flex flex-row sm:flex-col justify-between items-center sm:items-end gap-2">
-            <div className="flex items-center border border-beige-200 rounded-md">
+            <div className="flex items-center border border-beige-300 rounded-lg overflow-hidden">
               <button
-                className="w-8 h-8 flex items-center justify-center text-beige-600 hover:text-beige-800 hover:bg-beige-100 transition-colors"
+                className="w-10 h-10 flex items-center justify-center text-beige-700 bg-beige-100 active:scale-95"
                 onClick={() => updateQuantity(item.id, item.quantity - 1)}
                 disabled={item.quantity <= 1}
               >
-                <Minus className="w-3 h-3" />
+                <Minus className="w-4 h-4" />
               </button>
 
-              <span className="w-8 text-center text-beige-800">
+              <span className="w-10 text-center text-beige-900 font-medium text-lg">
                 {item.quantity}
               </span>
 
               <button
-                className="w-8 h-8 flex items-center justify-center text-beige-600 hover:text-beige-800 hover:bg-beige-100 transition-colors"
+                className="w-10 h-10 flex items-center justify-center text-beige-700 bg-beige-100 active:scale-95"
                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
               >
-                <Plus className="w-3 h-3" />
+                <Plus className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Precios */}
+            {/* Precio en desktop */}
             <div className="hidden sm:flex flex-col items-end">
               {item.originalPrice && item.originalPrice > item.price && (
                 <span className="text-sm line-through text-beige-500">
                   ${item.originalPrice.toLocaleString("es-AR")}
                 </span>
               )}
-              <span className="font-medium text-beige-800">
+              <span className="text-lg font-medium text-beige-800">
                 ${item.price.toLocaleString("es-AR")}
               </span>
             </div>
 
             {/* Eliminar */}
             <button
-              className="text-beige-600 hover:text-beige-800 transition-colors"
+              className="text-beige-600 hover:text-red-600 transition-colors active:scale-95"
               onClick={() => removeFromCart(item.id)}
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -139,7 +138,9 @@ const CartItemRow = memo(
 
 CartItemRow.displayName = "CartItemRow";
 
-// ================ PÁGINA PRINCIPAL ================
+/* =====================================
+   🛒 PÁGINA PRINCIPAL
+===================================== */
 export default function CartPage({ user }: CartPageProps) {
   const {
     items,
@@ -157,7 +158,7 @@ export default function CartPage({ user }: CartPageProps) {
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
 
-  // 🏠 Datos de envío
+  // Datos de envío
   const [shippingData, setShippingData] = useState({
     name: "",
     phone: "",
@@ -167,13 +168,11 @@ export default function CartPage({ user }: CartPageProps) {
     cp: "",
   });
 
-  // ================ MERCADO PAGO CHECKOUT ================
+  // MERCADO PAGO
   const handleMercadoPagoCheckout = useCallback(async () => {
     if (!user) return router.push("/sign-in");
-
     if (items.length === 0) return;
 
-    // VALIDACIÓN DE DATOS DE ENVÍO
     if (
       !shippingData.name ||
       !shippingData.phone ||
@@ -203,7 +202,7 @@ export default function CartPage({ user }: CartPageProps) {
         body: JSON.stringify({
           userId: user.id,
           items: mpItems,
-          shipping: shippingData, // enviar datos de envío
+          shipping: shippingData,
         }),
       });
 
@@ -222,63 +221,9 @@ export default function CartPage({ user }: CartPageProps) {
     }
   }, [user, items, shippingData, router]);
 
-  // WhatsApp — no se modifica
-  const ownerPhone = "543872226885";
-
   useEffect(() => {
     calculateTotals();
   }, [items, calculateTotals]);
-
-  const handleSendWhatsApp = useCallback(async () => {
-    if (!user) return;
-
-    setLoading(true);
-
-    try {
-      let orderIdToUse = orderId;
-
-      if (!orderIdToUse) {
-        const cartItems = items.map((item) => ({
-          productId: item.id.split("_")[0],
-          quantity: item.quantity,
-          size: item.size,
-          color: item.color,
-          price: item.price,
-          name: item.name,
-        }));
-
-        orderIdToUse = await createOrderAction({
-          userId: user.id,
-          items: cartItems,
-          phoneNumber: ownerPhone,
-        });
-
-        setOrderId(orderIdToUse);
-      }
-
-      const orderDetails = items
-        .map(
-          (item) =>
-            `${item.name} - ${item.size ? `Talla: ${item.size}, ` : ""}${item.color ? `Color: ${item.color}, ` : ""
-            }Cantidad: ${item.quantity}`
-        )
-        .join("\n");
-
-      const whatsappUrl = `https://api.whatsapp.com/send?phone=${ownerPhone}&text=${encodeURIComponent(
-        `Hola! Pedido ID: ${orderIdToUse}\n\n${orderDetails}\n\nTotal: $${total.toLocaleString(
-          "es-AR"
-        )}`
-      )}`;
-
-      const newWindow = window.open(whatsappUrl, "_blank");
-      if (!newWindow) window.location.href = whatsappUrl;
-
-      clearCart();
-      router.push("/perfil");
-    } finally {
-      setLoading(false);
-    }
-  }, [user, orderId, items, total, clearCart, router]);
 
   if (items.length === 0) return <EmptyCart />;
 
@@ -289,13 +234,22 @@ export default function CartPage({ user }: CartPageProps) {
           <h1 className="font-serif text-3xl md:text-4xl text-beige-800 mb-2">
             Carrito de Compras
           </h1>
+
+          {/* 🧭 GUÍA MÓVIL */}
+          <div className="lg:hidden mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-sm">
+            <p className="font-semibold mb-1">¿Cómo finalizar la compra?</p>
+            <ul className="space-y-1">
+              <li>1️⃣ Revisá tus productos aquí abajo.</li>
+              <li>2️⃣ Completá tu dirección de envío.</li>
+              <li>3️⃣ Tocá <strong>“Pagar con Mercado Pago”</strong>.</li>
+            </ul>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* =================== ITEMS =================== */}
+          {/* ITEMS */}
           <div className="lg:col-span-2">
-            <Card className="bg-white border-beige-200 shadow-sm overflow-hidden">
+            <Card className="bg-white border-beige-200 shadow-sm overflow-hidden rounded-2xl">
               <CardContent className="p-0">
                 <ul className="divide-y divide-beige-100">
                   {items.map((item) => (
@@ -311,14 +265,15 @@ export default function CartPage({ user }: CartPageProps) {
             </Card>
           </div>
 
-          {/* =================== RESUMEN =================== */}
+          {/* RESUMEN */}
           <div>
-            <Card className="bg-white border-beige-200 shadow-sm sticky top-24">
+            <Card className="bg-white border-beige-200 shadow-sm sticky top-24 rounded-2xl">
               <CardContent className="p-6 space-y-4">
-
-                {/* 🏠 DATOS DE ENVÍO */}
+                {/* DATOS DE ENVÍO */}
                 <div className="space-y-3">
-                  <h3 className="font-medium text-beige-800">Datos de Envío</h3>
+                  <h3 className="font-medium text-beige-800 text-lg">
+                    Datos de Envío
+                  </h3>
 
                   <Input
                     placeholder="Nombre completo"
@@ -411,40 +366,72 @@ export default function CartPage({ user }: CartPageProps) {
               </CardContent>
 
               <CardFooter className="p-6 pt-0 flex flex-col gap-3">
-
                 {user ? (
                   <Button
-                    className="w-full bg-blue-400 hover:bg-blue-700 text-white"
+                    className="
+        w-full py-4 text-sm font-semibold rounded-xl shadow-md transition 
+        bg-[#009EE3] hover:bg-[#007FB3] active:scale-95 text-white 
+        flex items-center justify-center gap-1  
+      "
                     onClick={handleMercadoPagoCheckout}
                     disabled={loading}
                   >
-                    {loading ? "Procesando..." : "Pagar con Mercado Pago"}
+                    {loading ? (
+                      "Procesando..."
+                    ) : (
+                      <>
+                        {/* LOGO MERCADO PAGO */}
+                        <Image
+                          src="/logompsolomano.png"
+                          alt="Mercado Pago"
+                          width={26}
+                          height={26}
+                          className="rounded-none"
+                        />
+                        Pagar con Mercado Pago
+                      </>
+                    )}
                   </Button>
                 ) : (
-                  <Button className="bg-beige-700 text-white w-full" asChild>
+                  <Button className="bg-beige-700 text-white w-full py-4 text-lg rounded-xl" asChild>
                     <Link href="/sign-in">Iniciar Sesión</Link>
                   </Button>
                 )}
-
-                {/* {user && (
-                  <Button
-                    className="w-full bg-beige-700 hover:bg-beige-800 text-white"
-                    onClick={handleSendWhatsApp}
-                    disabled={loading}
-                  >
-                    Enviar Pedido por WhatsApp
-                  </Button>
-                )} */}
               </CardFooter>
+
             </Card>
           </div>
         </div>
+      </div>
+
+      {/* BARRA FIJA — sólo móvil */}
+      <div className="lg:hidden z-50 fixed bottom-0 left-0 w-full bg-white border-t border-beige-200 p-4 shadow-lg">
+        <div className="flex justify-between mb-3 text-beige-800 font-medium">
+          <span>Total</span>
+          <span>${total.toLocaleString("es-AR")}</span>
+        </div>
+
+        <Button
+          className="w-full py-3 bg-[#009EE3] text-white font-semibold rounded-lg active:scale-95"
+          onClick={handleMercadoPagoCheckout}
+        >
+          <Image
+            src="/logompsolomano.png"
+            alt="Mercado Pago"
+            width={26}
+            height={26}
+            className="rounded-none mr-2"
+          />
+          Finalizar compra
+        </Button>
       </div>
     </main>
   );
 }
 
-// =================== CARRITO VACÍO ===================
+/* =====================================
+   🛒 CARRITO VACÍO
+===================================== */
 function EmptyCart() {
   return (
     <div className="container mx-auto max-w-7xl py-12 px-4 text-center">
@@ -452,7 +439,7 @@ function EmptyCart() {
 
       <Button
         asChild
-        className="bg-beige-700 hover:bg-beige-800 text-white px-8 py-6"
+        className="bg-beige-700 hover:bg-beige-800 text-white px-8 py-6 text-lg rounded-xl"
       >
         <Link href="/tienda">Explorar productos</Link>
       </Button>
