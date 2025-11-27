@@ -10,256 +10,181 @@ import { X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
-
-const MAX_SIZE = 2 * 1024 * 1024; // 2MB por imagen
+const MAX_SIZE = 2 * 1024 * 1024;
 const MAX_FILES = 5;
+
+type ProductVariant = {
+  color: string;
+  size: string;
+  stock: number;
+};
 
 export default function NewProductForm() {
   const [submitting, setSubmitting] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
-    []
-  );
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+
+  // 🔹 productType (ropa/calzado)
+  const [productType, setProductType] = useState<"ropa" | "calzado">("ropa");
+
+  // 🔹 variantes
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [variantColor, setVariantColor] = useState("");
+  const [variantSize, setVariantSize] = useState("");
+  const [variantStock, setVariantStock] = useState("");
+
+  const AVAILABLE_SIZES =
+    productType === "ropa"
+      ? ["XS", "S", "M", "L", "XL", "XXL"]
+      : ["35", "36", "37", "38", "39", "40", "41", "42"];
 
   const supabase = createClient();
   const formRef = useRef<HTMLFormElement>(null);
   const { toast } = useToast();
 
-  // 🔥 eliminar imagen individual
-  const handleRemoveImage = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+  const handleAddVariant = () => {
+    if (!variantColor.trim() || !variantSize || !variantStock) {
+      setFormError("Completa color, talle y stock antes de agregar.");
+      return;
+    }
 
-    setPreviewUrls((prev) => {
-      const clone = [...prev];
-      const [removedUrl] = clone.splice(index, 1);
-      if (removedUrl) URL.revokeObjectURL(removedUrl);
-      return clone;
-    });
+    setVariants((prev) => [
+      ...prev,
+      {
+        color: variantColor.trim(),
+        size: variantSize,
+        stock: Number(variantStock),
+      },
+    ]);
+
+    setVariantColor("");
+    setVariantSize("");
+    setVariantStock("");
+    setFormError(null);
   };
 
-  // ==== SUBMIT ====
-  async function handleSubmit(e: FormEvent) {
+  const handleRemoveVariant = (index: number) => {
+    setVariants((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setFormError(null);
     setSubmitting(true);
+    setFormError(null);
+
+    if (variants.length === 0) {
+      setFormError("Debes agregar al menos una variante (color+talle+stock).");
+      setSubmitting(false);
+      return;
+    }
+
+    // 🔹 Derivar stock total
+    const stock = variants.reduce((acc, v) => acc + v.stock, 0);
+    const sizes = Array.from(new Set(variants.map((v) => v.size)));
+    const colors = Array.from(new Set(variants.map((v) => v.color)));
 
     const publicUrls: string[] = [];
     const uploadedFileNames: string[] = [];
 
-    // ==== SUBIR IMÁGENES ====
+    // SUBIR IMÁGENES
     try {
       for (const file of files) {
-        if (!file.type.startsWith("image/")) {
-          const msg = "Todos los archivos deben ser imágenes válidas.";
-          setFormError(msg);
-          toast({
-            variant: "destructive",
-            title: "Error al subir imágenes",
-            description: msg,
-          });
-          setSubmitting(false);
-          return;
-        }
-
         if (file.size > MAX_SIZE) {
-          const msg = `La imagen "${file.name}" excede los 2MB permitidos.`;
-          setFormError(msg);
-          toast({
-            variant: "destructive",
-            title: "Imagen demasiado pesada",
-            description: msg,
-          });
+          setFormError(`La imagen "${file.name}" excede los 2MB.`);
           setSubmitting(false);
           return;
         }
 
         const webpBlob = await convertImageToWebP(file);
         const fileName = `${Date.now()}-${file.name.split(".")[0]}.webp`;
-        const webpFile = new File([webpBlob], fileName, {
-          type: "image/webp",
-        });
+        const webpFile = new File([webpBlob], fileName, { type: "image/webp" });
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("product-images")
           .upload(fileName, webpFile);
 
         if (uploadError) {
-          const msg = `Error subiendo la imagen "${file.name}": ${uploadError.message}`;
-          setFormError(msg);
-          toast({
-            variant: "destructive",
-            title: "Error al subir imagen",
-            description: msg,
-          });
+          setFormError(uploadError.message);
           setSubmitting(false);
           return;
         }
 
-        const { data } = supabase.storage
-          .from("product-images")
-          .getPublicUrl(uploadData.path);
-
-        if (data?.publicUrl) {
-          publicUrls.push(data.publicUrl);
-          uploadedFileNames.push(fileName);
-        }
+        const { data } = supabase.storage.from("product-images").getPublicUrl(uploadData.path);
+        publicUrls.push(data.publicUrl);
+        uploadedFileNames.push(fileName);
       }
     } catch (err) {
       console.error(err);
-      const msg = "Hubo un error subiendo las imágenes.";
-      setFormError(msg);
-      toast({
-        variant: "destructive",
-        title: "Error inesperado",
-        description: msg,
-      });
+      setFormError("Error subiendo imágenes.");
       setSubmitting(false);
       return;
     }
 
-    // ==== CAMPOS DEL FORM ====
-    if (!formRef.current) {
-      setSubmitting(false);
-      return;
-    }
-
+    if (!formRef.current) return;
     const formData = new FormData(formRef.current);
 
-    const title = (formData.get("title") as string)?.trim() || "";
-    const description = (formData.get("description") as string)?.trim() || "";
-    const price = parseFloat(formData.get("price") as string);
-    const sizes = (formData.get("sizes") as string)
-      .split(",")
-      .map((x) => x.trim())
-      .filter(Boolean);
-    const colors = (formData.get("colors") as string)
-      .split(",")
-      .map((x) => x.trim())
-      .filter(Boolean);
-    const stock = parseInt(formData.get("stock") as string);
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const price = Number(formData.get("price"));
     const category_id = formData.get("category_id") as string;
 
-    if (title.length < 3) {
-      const msg = "El título debe tener al menos 3 caracteres.";
-      setFormError(msg);
-      toast({
-        variant: "destructive",
-        title: "Título inválido",
-        description: msg,
-      });
+    if (!title || title.length < 3) {
+      setFormError("El título debe tener al menos 3 caracteres.");
       setSubmitting(false);
       return;
     }
 
-    if (!categories.some((c) => c.id === category_id)) {
-      const msg = "Debes seleccionar una categoría válida.";
-      setFormError(msg);
-      toast({
-        variant: "destructive",
-        title: "Categoría inválida",
-        description: msg,
-      });
-      setSubmitting(false);
-      return;
-    }
-
-    if (isNaN(price) || price < 0) {
-      const msg = "El precio debe ser un número válido.";
-      setFormError(msg);
-      toast({
-        variant: "destructive",
-        title: "Precio inválido",
-        description: msg,
-      });
-      setSubmitting(false);
-      return;
-    }
-
-    if (isNaN(stock) || stock < 0) {
-      const msg = "El stock debe ser un número válido.";
-      setFormError(msg);
-      toast({
-        variant: "destructive",
-        title: "Stock inválido",
-        description: msg,
-      });
-      setSubmitting(false);
-      return;
-    }
-
-    // ==== INSERT EN SUPABASE ====
+    // INSERT SUPABASE
     const { error: insertError } = await supabase.from("products").insert([
       {
         title,
         description,
         price,
+        images: publicUrls,
+        productType, // 👈 NUEVO
+        variants, // 👈 NUEVO
+        stock,
         sizes,
         colors,
-        images: publicUrls,
-        stock,
         category_id,
       },
     ]);
 
     if (insertError) {
       console.error(insertError);
-      const msg = "Error insertando producto: " + insertError.message;
-      setFormError(msg);
 
-      // rollback de imágenes subidas
-      if (uploadedFileNames.length > 0) {
-        await supabase.storage
-          .from("product-images")
-          .remove(uploadedFileNames);
-      }
+      await supabase.storage.from("product-images").remove(uploadedFileNames);
 
-      toast({
-        variant: "destructive",
-        title: "Error al crear el producto",
-        description: msg,
-      });
-
+      setFormError("Error creando producto.");
       setSubmitting(false);
       return;
     }
 
-    // ✅ ÉXITO: mensaje claro de lo que se creó
     toast({
-      title: "Producto creado con éxito",
-      description: `Se creó el producto "${title}" correctamente.`,
+      title: "Producto creado",
+      description: `El producto "${title}" fue creado correctamente.`,
     });
 
+    setSubmitting(false);
     formRef.current.reset();
+    setVariants([]);
     setFiles([]);
     setPreviewUrls([]);
-    setSubmitting(false);
-  }
+  };
 
-  // ==== CARGAR CATEGORÍAS ====
+  // Cargar categorías
   useEffect(() => {
     supabase
       .from("categories")
-      .select("id, name")
-      .then(({ data, error }) => {
-        if (!error && data) setCategories(data);
-      });
+      .select("*")
+      .then(({ data }) => data && setCategories(data));
   }, []);
 
-  // cleanup al desmontar
-  useEffect(() => {
-    return () => {
-      previewUrls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [previewUrls]);
-
   return (
-    <form
-      ref={formRef}
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 max-w-lg mx-auto"
-    >
+    <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-lg mx-auto">
       {formError && (
         <Alert variant="destructive">
           <AlertTitle>Error</AlertTitle>
@@ -267,63 +192,95 @@ export default function NewProductForm() {
         </Alert>
       )}
 
-      {/* Título */}
+      {/* TÍTULO */}
       <label>
         <span className="text-sm font-medium">Título</span>
         <Input name="title" required className="mt-1" />
       </label>
 
-      {/* Descripción */}
+      {/* DESCRIPCIÓN */}
       <label>
         <span className="text-sm font-medium">Descripción</span>
         <Textarea name="description" className="mt-1" />
       </label>
 
-      {/* Precio */}
+      {/* PRECIO */}
       <label>
         <span className="text-sm font-medium">Precio</span>
-        <Input
-          type="number"
-          name="price"
-          step="0.01"
-          min="0"
-          required
-          className="mt-1"
-        />
+        <Input type="number" name="price" step="0.01" min="0" required className="mt-1" />
       </label>
 
-      {/* Tallas */}
+      {/* 🔹 Tipo de producto */}
       <label>
-        <span className="text-sm font-medium">Tallas (coma separadas)</span>
-        <Input name="sizes" className="mt-1" />
+        <span className="text-sm font-medium">Tipo de producto</span>
+        <select
+          className="mt-1 w-full border rounded px-3 py-2"
+          value={productType}
+          onChange={(e) => setProductType(e.target.value as "ropa" | "calzado")}
+        >
+          <option value="ropa">Ropa</option>
+          <option value="calzado">Calzado</option>
+        </select>
       </label>
 
-      {/* Colores */}
-      <label>
-        <span className="text-sm font-medium">Colores (coma separadas)</span>
-        <Input name="colors" className="mt-1" />
-      </label>
+      {/* 🔹 Variantes */}
+      <div className="border rounded p-3 space-y-2">
+        <p className="text-sm font-medium">Variantes (color, talle, stock)</p>
 
-      {/* Stock */}
-      <label>
-        <span className="text-sm font-medium">Stock</span>
-        <Input
-          type="number"
-          name="stock"
-          min="0"
-          required
-          className="mt-1"
-        />
-      </label>
+        <div className="grid grid-cols-3 gap-2">
+          <Input
+            placeholder="Color"
+            value={variantColor}
+            onChange={(e) => setVariantColor(e.target.value)}
+          />
 
-      {/* Categoría */}
+          <select
+            className="border rounded px-2 py-1"
+            value={variantSize}
+            onChange={(e) => setVariantSize(e.target.value)}
+          >
+            <option value="">Talle</option>
+            {AVAILABLE_SIZES.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+
+          <Input
+            type="number"
+            placeholder="Stock"
+            value={variantStock}
+            onChange={(e) => setVariantStock(e.target.value)}
+          />
+        </div>
+
+        <Button type="button" variant="outline" onClick={handleAddVariant}>
+          Agregar variante
+        </Button>
+
+        {variants.length > 0 && (
+          <ul className="mt-2 space-y-1 text-sm">
+            {variants.map((v, i) => (
+              <li key={i} className="flex justify-between">
+                <span>
+                  {v.color} — {v.size} ({v.stock})
+                </span>
+                <button
+                  type="button"
+                  className="text-red-500 text-xs"
+                  onClick={() => handleRemoveVariant(i)}
+                >
+                  Quitar
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* CATEGORÍA */}
       <label>
         <span className="text-sm font-medium">Categoría</span>
-        <select
-          name="category_id"
-          required
-          className="mt-1 w-full border rounded px-3 py-2"
-        >
+        <select name="category_id" required className="mt-1 w-full border rounded px-3 py-2">
           <option value="">Selecciona una categoría</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
@@ -333,11 +290,9 @@ export default function NewProductForm() {
         </select>
       </label>
 
-      {/* Upload múltiple */}
+      {/* IMÁGENES */}
       <label>
-        <span className="text-sm font-medium">
-          Imágenes del producto (máx {MAX_FILES})
-        </span>
+        <span className="text-sm font-medium">Imágenes (máx {MAX_FILES})</span>
         <Input
           type="file"
           accept="image/*"
@@ -349,59 +304,40 @@ export default function NewProductForm() {
             const updated = [...files, ...newFiles];
 
             if (updated.length > MAX_FILES) {
-              const msg = `Máximo ${MAX_FILES} imágenes.`;
-              setFormError(msg);
-              toast({
-                variant: "destructive",
-                title: "Límite de imágenes",
-                description: msg,
-              });
+              setFormError(`Máximo ${MAX_FILES} imágenes.`);
               return;
             }
 
             setFiles(updated);
-
-            const newPreviews = newFiles.map((file) =>
-              URL.createObjectURL(file)
-            );
+            const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
             setPreviewUrls((prev) => [...prev, ...newPreviews]);
-
-            e.target.value = "";
           }}
         />
       </label>
 
-      {/* PREVIEWS + BOTÓN X */}
       {previewUrls.length > 0 && (
-        <div className="mt-4">
-          <p className="text-sm mb-2">Vistas previas:</p>
-          <div className="grid grid-cols-2 gap-3">
-            {previewUrls.map((url, idx) => (
-              <div key={idx} className="relative">
-                <img
-                  src={url}
-                  className="max-h-40 w-full object-cover rounded border shadow"
-                />
+        <div className="grid grid-cols-2 gap-3 mt-2">
+          {previewUrls.map((url, idx) => (
+            <div key={idx} className="relative">
+              <img src={url} className="w-full h-40 object-cover rounded border" />
 
-                {/* Botón borrar */}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(idx)}
-                  className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/80"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setFiles((prev) => prev.filter((_, i) => i !== idx));
+                  setPreviewUrls((prev) => prev.filter((_, i) => i !== idx));
+                }}
+                className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
-      <Button type="submit" disabled={submitting} className="mt-2">
-        {submitting && (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-        )}
-        {submitting ? "Creando producto..." : "Crear producto"}
+      <Button type="submit" disabled={submitting}>
+        {submitting ? <Loader2 className="animate-spin" /> : "Crear producto"}
       </Button>
     </form>
   );

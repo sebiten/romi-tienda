@@ -154,42 +154,47 @@ export async function createOrderAction(
   return order.id;
 }
 
-// action para editar un producto
 export async function updateProductAction(formData: FormData) {
-  "use server";
+  const supabase = await createClient();
 
   const id = formData.get("id") as string;
   const title = (formData.get("title") as string)?.trim() || "";
   const description = (formData.get("description") as string)?.trim() || "";
   const price = parseFloat(formData.get("price") as string);
-  const stock = parseInt(formData.get("stock") as string, 10);
-
-  const sizesRaw = (formData.get("sizes") as string) || "";
-  const colorsRaw = (formData.get("colors") as string) || "";
-
-  const sizes = sizesRaw
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const colors = colorsRaw
-    .split(",")
-    .map((c) => c.trim())
-    .filter(Boolean);
-
   const category_id = (formData.get("category_id") as string) || null;
 
-  const supabase = await createClient();
+  // ⭐ NUEVO: recibimos variantes desde el form
+  const variantsJson = formData.get("variants") as string;
 
+  let variants: Array<{ color: string; size: string; stock: number }> = [];
+
+  try {
+    variants = JSON.parse(variantsJson);
+  } catch (e) {
+    console.error("Error parsing variants JSON:", e);
+    throw new Error("Formato inválido de variantes.");
+  }
+
+  if (!Array.isArray(variants) || variants.length === 0) {
+    throw new Error("Debes agregar al menos una variante.");
+  }
+
+  // ⭐ NUEVO: derivar sizes, colors y stock total
+  const sizes = Array.from(new Set(variants.map((v) => v.size)));
+  const colors = Array.from(new Set(variants.map((v) => v.color)));
+  const stock = variants.reduce((acc, v) => acc + (v.stock ?? 0), 0);
+
+  // ⭐ Actualizar producto en Supabase
   const { error } = await supabase
     .from("products")
     .update({
       title,
       description,
       price,
-      stock,
       sizes,
       colors,
+      stock,
+      variants,  // guardamos variantes completas
       category_id,
     })
     .eq("id", id);
@@ -199,10 +204,8 @@ export async function updateProductAction(formData: FormData) {
     throw new Error(error.message);
   }
 
-  // 🔥 Redirige correctamente de nuevo al mismo producto
-  // updateProductAction
+  // Redirigir con éxito
   redirect(`/admin/edit/${id}?success=1`);
-
 }
 
 

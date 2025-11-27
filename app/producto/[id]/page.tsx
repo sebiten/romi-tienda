@@ -1,6 +1,11 @@
 "use client";
-
-import { useState, useEffect, useCallback, memo } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  memo,
+  useMemo,
+} from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,6 +16,37 @@ import { Separator } from "@/components/ui/separator";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { createClient } from "@/utils/supabase/client";
 import { Product } from "@/lib/types";
+import { useCartStore } from "@/app/store/cartStore";
+
+// === Helpers para variants ===
+function getProductColors(product: Product): string[] {
+  if (product.variants && product.variants.length > 0) {
+    return Array.from(new Set(product.variants.map((v: any) => v.color)));
+  }
+  return product.colors ?? [];
+}
+
+function getProductSizes(product: Product): string[] {
+  if (product.variants && product.variants.length > 0) {
+    return Array.from(new Set(product.variants.map((v: any) => v.size)));
+  }
+  return product.sizes ?? [];
+}
+
+function getVariantStock(product: Product, color: string, size: string): number {
+  if (product.variants && product.variants.length > 0) {
+    const variant = product.variants.find(
+      (v: any) => v.color === color && v.size === size
+    );
+
+    // ❗ Si no existe esta combinación → stock = 0
+    if (!variant) return 0;
+
+    return variant.stock ?? 0;
+  }
+  // Si NO hay variantes, usar stock general
+  return product.stock ?? 0;
+}
 
 // Memoized product image gallery component
 const ProductImageGallery = memo(
@@ -43,7 +79,9 @@ const ProductImageGallery = memo(
           {images.map((image, index) => (
             <button
               key={index}
-              className={`aspect-square relative rounded-md overflow-hidden border-2 ${activeImage === index ? "border-beige-700" : "border-beige-200"
+              className={`aspect-square relative rounded-md overflow-hidden border-2 ${activeImage === index
+                ? "border-beige-700"
+                : "border-beige-200"
                 }`}
               onClick={() => setActiveImage(index)}
               aria-label={`Ver imagen ${index + 1}`}
@@ -184,15 +222,18 @@ export default function ProductPage() {
           throw new Error(error.message);
         }
 
-        setProduct(data);
+        setProduct(data as Product);
 
-        // Set default selections if available
-        if (data.sizes && data.sizes.length > 0) {
-          setSelectedSize(data.sizes[0]);
+        // Set default selections si hay variants o fallback
+        const colors = getProductColors(data as Product);
+        const sizes = getProductSizes(data as Product);
+
+        if (sizes.length > 0) {
+          setSelectedSize(sizes[0]);
         }
 
-        if (data.colors && data.colors.length > 0) {
-          setSelectedColor(data.colors[0]);
+        if (colors.length > 0) {
+          setSelectedColor(colors[0]);
         }
       } catch (err) {
         console.error("Error fetching product:", err);
@@ -206,6 +247,42 @@ export default function ProductPage() {
 
     fetchProduct();
   }, [productId]);
+
+  // Opciones derivadas desde variants + fallback
+  const colors = useMemo(
+    () => (product ? getProductColors(product) : []),
+    [product]
+  );
+
+  const sizes = useMemo(
+    () => (product ? getProductSizes(product) : []),
+    [product]
+  );
+
+  const currentStock = useMemo(() => {
+    if (!product) return 0;
+    if (selectedColor && selectedSize) {
+      return getVariantStock(product, selectedColor, selectedSize);
+    }
+    return product.stock ?? 0;
+  }, [product, selectedColor, selectedSize]);
+
+  const cartItems = useCartStore((state) => state.items);
+
+  const cartQty = useMemo(() => {
+    if (!product) return 0;
+    return cartItems
+      .filter(
+        (item) =>
+          item.product_id === product.id &&
+          item.color === selectedColor &&
+          item.size === selectedSize
+      )
+      .reduce((sum, item) => sum + item.quantity, 0);
+  }, [cartItems, product, selectedColor, selectedSize]);
+
+  const remainingStock = Math.max(currentStock - cartQty, 0);
+
 
   // Handle option changes
   const handleSizeChange = useCallback((size: string) => {
@@ -259,6 +336,7 @@ export default function ProductPage() {
             activeImage={activeImage}
             setActiveImage={handleImageChange}
           />
+
           {/* Product details */}
           <div className="space-y-6">
             <div>
@@ -273,31 +351,26 @@ export default function ProductPage() {
                 <span className="text-2xl font-medium text-beige-800">
                   ${product.price?.toLocaleString("es-AR")}
                 </span>
-                {product.price && product.price > product.price && (
-                  <span className="ml-2 text-lg line-through text-beige-500">
-                    ${product.price.toLocaleString("es-AR")}
-                  </span>
-                )}
               </div>
             </div>
 
             <Separator className="bg-beige-200" />
 
             {/* Size selection */}
-            {product.sizes && product.sizes.length > 0 && (
+            {sizes.length > 0 && (
               <OptionSelector
                 label="Talla"
-                options={product.sizes}
+                options={sizes}
                 selectedOption={selectedSize}
                 onChange={handleSizeChange}
               />
             )}
 
             {/* Color selection */}
-            {product.colors && product.colors.length > 0 && (
+            {colors.length > 0 && (
               <OptionSelector
                 label="Color"
-                options={product.colors}
+                options={colors}
                 selectedOption={selectedColor}
                 onChange={handleColorChange}
               />
@@ -305,13 +378,17 @@ export default function ProductPage() {
 
             {/* Stock information */}
             <div className="flex items-center">
-              {product.stock && product.stock > 0 ? (
+              {remainingStock > 0 ? (
                 <div className="flex items-center text-green-600">
                   <Check className="w-4 h-4 mr-1" />
-                  <span>En stock ({product.stock} disponibles)</span>
+                  <span>
+                    En stock ({remainingStock} disponibles para {selectedColor} - {selectedSize})
+                  </span>
                 </div>
               ) : (
-                <div className="text-red-500">Agotado</div>
+                <div className="text-red-500">
+                  Sin stock disponible para {selectedColor} - {selectedSize}
+                </div>
               )}
             </div>
 
@@ -321,6 +398,7 @@ export default function ProductPage() {
                 product={product}
                 selectedSize={selectedSize}
                 selectedColor={selectedColor}
+                currentStock={currentStock}   // ⭐ IMPORTANTÍSIMO
                 className="w-full py-6 text-lg"
               />
 

@@ -8,19 +8,19 @@ interface CartState {
   isLoading: boolean
   error: string | null
 
-  // Cart calculations
+  // Totals
   subtotal: number
   shipping: number
   discount: number
   total: number
 
-  // Products from Supabase
+  // Products
   products: Product[]
   isLoadingProducts: boolean
 
   // Actions
   fetchProducts: () => Promise<void>
-  addToCart: (product: Product, size: string, color: string) => void
+  addToCart: (product: Product, size: string, color: string, variantStock: number) => void
   removeFromCart: (itemId: string) => void
   updateQuantity: (itemId: string, quantity: number) => void
   clearCart: () => void
@@ -30,7 +30,6 @@ interface CartState {
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
-      // Initial state
       items: [],
       isLoading: false,
       error: null,
@@ -41,7 +40,7 @@ export const useCartStore = create<CartState>()(
       products: [],
       isLoadingProducts: false,
 
-      // Fetch products from Supabase
+      // Fetch products
       fetchProducts: async () => {
         try {
           set({ isLoadingProducts: true, error: null })
@@ -52,14 +51,9 @@ export const useCartStore = create<CartState>()(
             .select("*")
             .order("created_at", { ascending: false })
 
-          if (productsError) {
-            throw new Error(productsError.message)
-          }
+          if (productsError) throw new Error(productsError.message)
 
-          set({
-            products: products || [],
-            isLoadingProducts: false,
-          })
+          set({ products: products || [], isLoadingProducts: false })
         } catch (error) {
           console.error("Error fetching products:", error)
           set({
@@ -69,99 +63,115 @@ export const useCartStore = create<CartState>()(
         }
       },
 
-      // Add item to cart
-      addToCart: (product, size, color) => {
+      // 🛒 Add to cart WITH VARIANTS
+      addToCart: (product, size, color, variantStock) => {
         const { items } = get()
 
-        // Check if item already exists in cart with same size and color
         const existingItemIndex = items.findIndex(
-          (item) => item.product_id === product.id && item.size === size && item.color === color,
+          (item) =>
+            item.product_id === product.id && item.size === size && item.color === color
         )
 
         if (existingItemIndex > -1) {
-          // Update quantity if item exists
           const updatedItems = [...items]
-          updatedItems[existingItemIndex].quantity += 1
+          const item = updatedItems[existingItemIndex]
 
+          // No permitir pasar stock
+          if (item.quantity >= variantStock) return
+
+          updatedItems[existingItemIndex].quantity += 1
           set({ items: updatedItems })
         } else {
-          // Add new item if it doesn't exist
           const newItem: CartItem = {
             id: `${product.id}_${size}_${color}_${Date.now()}`,
             name: product.title,
             price: product.price!,
-            originalPrice: product.price! || product.price!,
+            originalPrice: product.price!,
             quantity: 1,
             image: product.images?.[0] || "/placeholder.svg",
             size,
             color,
             product_id: product.id,
+            variantStock,
           }
 
           set({ items: [...items, newItem] })
         }
 
-        // Recalculate totals
         get().calculateTotals()
       },
 
-      // Remove item from cart
+      // Remove item
       removeFromCart: (itemId) => {
-        const { items } = get()
-        const updatedItems = items.filter((item) => item.id !== itemId)
-
+        const updatedItems = get().items.filter((item) => item.id !== itemId)
         set({ items: updatedItems })
         get().calculateTotals()
       },
 
-      // Update item quantity
+      // Update quantity WITH STOCK LIMITS
       updateQuantity: (itemId, quantity) => {
         const { items } = get()
 
-        if (quantity < 1) {
-          // Remove item if quantity is less than 1
-          get().removeFromCart(itemId)
-          return
-        }
+        const updatedItems = items
+          .map((item) => {
+            if (item.id === itemId) {
+              // Eliminamos si ponen 0
+              if (quantity < 1) return null
 
-        const updatedItems = items.map((item) => (item.id === itemId ? { ...item, quantity } : item))
+              // No dejar pasar stock
+              const max = item.variantStock ?? item.quantity
+              const safeQty = Math.min(quantity, max)
+
+              return { ...item, quantity: safeQty }
+            }
+            return item
+          })
+          .filter(Boolean) as CartItem[]
 
         set({ items: updatedItems })
         get().calculateTotals()
       },
 
-      // Clear cart
       clearCart: () => {
         set({ items: [] })
         get().calculateTotals()
       },
 
-      // Calculate totals
       calculateTotals: () => {
-        const { items } = get()
+        const { items } = get();
 
-        // Calculate subtotal
-        const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0)
+        // Cantidad total de unidades en el carrito
+        const totalUnits = items.reduce((total, item) => total + item.quantity, 0);
 
-        // Calculate discount
-        const discount = items.reduce((total, item) => total + (item.originalPrice - item.price) * item.quantity, 0)
+        // Subtotal normal
+        const subtotal = items.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0
+        );
 
-        // Calculate shipping (free if subtotal > 999)
-        const shipping = subtotal > 999 ? 0 : 150
+        // Descuento automático por volumen
+        let discount = 0;
 
-        // Calculate total
-        const total = subtotal + shipping
+        if (totalUnits >= 6) {
+          // 10% de descuento
+          discount = subtotal * 0.10;
+        }
 
-        set({ subtotal, discount, shipping, total })
+        // Calcular shipping (gratis si subtotal > 999)
+        const shipping = subtotal > 999 ? 0 : 150;
+
+        // Total final
+        const total = subtotal - discount + shipping;
+
+        set({ subtotal, discount, shipping, total });
       },
+
     }),
     {
       name: "alma-lucia-cart",
-      // Only persist specific parts of the state
       partialize: (state) => ({
         items: state.items,
       }),
-    },
-  ),
+    }
+  )
 )
-
