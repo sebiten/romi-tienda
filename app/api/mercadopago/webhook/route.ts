@@ -33,7 +33,7 @@ export async function POST(request: Request) {
             mpPayment = await paymentApi.get({ id: paymentId });
         } catch (err: any) {
             if (err.status === 404) {
-                console.warn("⚠ Pago aún no procesado (404). Webhook temprano ignorado.");
+                console.warn("⚠ Pago aún no disponible (404). Webhook temprano ignorado.");
                 return NextResponse.json({ ok: true });
             }
 
@@ -43,15 +43,15 @@ export async function POST(request: Request) {
 
         console.log("🔎 PAYMENT COMPLETO:", mpPayment);
 
-        // 3) Ignorar webhooks tempranos sin external_reference
+        // 3) Ignorar webhooks incompletos sin external_reference
         if (!mpPayment.external_reference) {
-            console.warn("⚠ Webhook SIN external_reference (payment.created temprano). Ignorando...");
+            console.warn("⚠ Webhook sin external_reference. Ignorando...");
             return NextResponse.json({ ok: true });
         }
 
-        // 4) Solo procesar cuando el pago esté APROBADO
+        // 4) Solo procesar pagos aprobados
         if (mpPayment.status !== "approved") {
-            console.log(`⚠ Pago con estado '${mpPayment.status}'. Sin acción.`);
+            console.log(`⚠ Pago con estado '${mpPayment.status}'. No se procesa.`);
             return NextResponse.json({ ok: true });
         }
 
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
 
         console.log("🟢 ORDEN ACTUALIZADA COMO PAID:", orderId);
 
-        // 7) Descontar stock (solo si recién se pagó)
+        // 7) Descontar stock (solo si recién pasó de pending → paid)
         if (!alreadyPaid) {
             console.log("🟢 Descontando stock...");
 
@@ -99,6 +99,7 @@ export async function POST(request: Request) {
                 .eq("order_id", orderId);
 
             for (const item of orderItems ?? []) {
+
                 const { data: product } = await supabase
                     .from("products")
                     .select("id, stock, variants")
@@ -116,11 +117,13 @@ export async function POST(request: Request) {
 
                 if (idx === -1) continue;
 
+                // Descuento variante
                 variants[idx].stock = Math.max(
                     variants[idx].stock - item.quantity,
                     0
                 );
 
+                // Descuento stock total
                 const newTotalStock = Math.max(
                     (product.stock ?? 0) - item.quantity,
                     0
@@ -131,6 +134,8 @@ export async function POST(request: Request) {
                     .update({ variants, stock: newTotalStock })
                     .eq("id", product.id);
             }
+
+            console.log("🟢 Stock descontado correctamente.");
         }
 
         return NextResponse.json({ ok: true });
