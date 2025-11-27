@@ -1,20 +1,18 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import MercadoPagoConfig, { Preference } from "mercadopago";
 
 export async function POST(req: Request) {
     try {
-        // =============================
-        // 1) LEER BODY UNA sola vez
-        // =============================
         const body = await req.json();
         const { userId, items, shipping } = body;
 
         console.log("📦 RECIBIDO EN BACKEND:", body);
 
-        // =============================
-        // 2) VALIDACIONES BÁSICAS
-        // =============================
+        if (!userId) {
+            return NextResponse.json({ error: "Falta userId" }, { status: 400 });
+        }
+
         if (!items || items.length === 0) {
             return NextResponse.json({ error: "No hay items en el pedido" }, { status: 400 });
         }
@@ -23,25 +21,42 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Faltan datos de envío" }, { status: 400 });
         }
 
-        // Validar todos los campos del envío
         const requiredFields = ["name", "phone", "address", "city", "province", "cp"];
         for (const field of requiredFields) {
             if (!shipping[field]) {
-                return NextResponse.json(
-                    { error: `Falta el dato de envío: ${field}` },
-                    { status: 400 }
-                );
+                return NextResponse.json({ error: `Falta el dato de envío: ${field}` }, { status: 400 });
             }
         }
 
-        const supabase = await createClient();
+        // ⚠ CLIENTE ADMIN PARA IGNORAR RLS
+        const supabase = createAdminClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
 
-        // =============================
-        // 3) VALIDAR STOCK
-        // =============================
-        console.log("🛒 ITEMS PARA MP:", items);
-        console.log("🏠 DATOS DE ENVÍO:", shipping);
+        // ============================================================
+        // 1) BUSCAR SI YA EXISTE UNA ORDEN PENDIENTE PARA ESTE USUARIO
+        // ============================================================
+        const { data: pendingOrder } = await supabase
+            .from("orders")
+            .select("id, mp_preference_id")
+            .eq("user_id", userId)
+            .eq("status", "pending")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
 
+        if (pendingOrder) {
+            console.log("🔁 Orden pendiente existente → reutilizando preferencia");
+
+            return NextResponse.json({
+                init_point: `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${pendingOrder.mp_preference_id}`,
+            });
+        }
+
+        // ============================================================
+        // 2) VALIDAR STOCK DE FORMA SEGURA
+        // ============================================================
         for (const item of items) {
             const { data: product } = await supabase
                 .from("products")
@@ -77,9 +92,9 @@ export async function POST(req: Request) {
             }
         }
 
-        // =============================
-        // 4) CREAR ORDEN EN SUPABASE
-        // =============================
+        // ============================================================
+        // 3) CREAR ORDEN SEGURA (ANTI DOBLE CLICK)
+        // ============================================================
         const total = items.reduce(
             (acc: number, it: any) => acc + it.quantity * it.unit_price,
             0
@@ -91,6 +106,7 @@ export async function POST(req: Request) {
                 user_id: userId,
                 status: "pending",
                 total,
+
                 shipping_name: shipping.name,
                 shipping_phone: shipping.phone,
                 shipping_address: shipping.address,
@@ -101,18 +117,16 @@ export async function POST(req: Request) {
             .select()
             .single();
 
-        if (orderError) {
+        if (orderError || !order) {
             console.error("❌ ERROR creando orden:", orderError);
-            return NextResponse.json(
-                { error: "Error al crear la orden" },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: "Error al crear la orden" }, { status: 500 });
         }
 
-        console.log("🟢 ORDER CREADA EN SUPABASE:", order);
-        console.log("🟢 order.id usado en external_reference:", order.id);
+        console.log("🟢 ORDEN NUEVA:", order.id);
 
-        // Guardar items
+        // ============================================================
+        // 4) INSERTAR ITEMS DE LA ORDEN
+        // ============================================================
         for (const item of items) {
             await supabase.from("order_items").insert({
                 order_id: order.id,
@@ -124,27 +138,22 @@ export async function POST(req: Request) {
             });
         }
 
-        // =============================
+        // ============================================================
         // 5) CREAR PREFERENCIA MP
-        // =============================
+        // ============================================================
         const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
         const siteURL = process.env.NEXT_PUBLIC_SITE_URL;
 
         if (!accessToken) {
-            console.error("❌ Falta MERCADOPAGO_ACCESS_TOKEN en el .env");
             return NextResponse.json({ error: "MP no configurado" }, { status: 500 });
         }
 
-        if (!siteURL) {
-            console.error("❌ Falta NEXT_PUBLIC_SITE_URL");
-        }
+        const mpClient = new MercadoPagoConfig({ accessToken });
+        const preference = new Preference(mpClient);
 
-        const client = new MercadoPagoConfig({ accessToken });
-        const preference = new Preference(client);
-
-        const result = await preference.create({
+        const pref = await preference.create({
             body: {
-                external_reference: order.id, // UUID → perfecto
+                external_reference: order.id,
 
                 items: items.map((it: any) => ({
                     title: `${it.title} - ${it.color} - Talle ${it.size}`,
@@ -162,28 +171,29 @@ export async function POST(req: Request) {
                 },
 
                 notification_url: `${siteURL}/api/mercadopago/webhook`,
-
                 auto_return: "approved",
             },
         });
 
-        console.log("🎯 PREFERENCE RESULT MP:", result);
+        console.log("🎯 PREFERENCIA CREADA:", pref.id);
 
-        // Guardar preference_id
+        // ============================================================
+        // 6) GUARDAR PREFERENCE EN LA ORDEN
+        // ============================================================
         await supabase
             .from("orders")
-            .update({ mp_preference_id: result.id })
+            .update({ mp_preference_id: pref.id })
             .eq("id", order.id);
 
+        // ============================================================
+        // 7) RESPONDER CON INIT POINT
+        // ============================================================
         return NextResponse.json({
-            init_point: result.init_point,
+            init_point: pref.init_point ?? `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${pref.id}`,
         });
 
     } catch (err) {
-        console.error("❌ ERROR MP:", err);
-        return NextResponse.json(
-            { error: "Error interno en Mercado Pago" },
-            { status: 500 }
-        );
+        console.error("❌ ERROR:", err);
+        return NextResponse.json({ error: "Error interno en el servidor" }, { status: 500 });
     }
 }

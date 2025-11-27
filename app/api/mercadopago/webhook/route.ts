@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import MercadoPagoConfig, { Payment } from "mercadopago";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 
 export async function POST(request: Request) {
     try {
@@ -10,10 +10,16 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "MP no configurado" }, { status: 500 });
         }
 
+        // ⚠ SUPABASE ADMIN CLIENT (SERVICE ROLE)
+        const supabase = createAdminClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY! // 🔥 Necesario para ignorar RLS
+        );
+
         const body = await request.json();
         console.log("📩 WEBHOOK RECIBIDO:", body);
 
-        // 1) Verificar que sea evento de pago
+        // 1) Validar evento de pago
         const isPayment =
             body.type === "payment" ||
             (body.action && body.action.startsWith("payment."));
@@ -24,7 +30,7 @@ export async function POST(request: Request) {
 
         const paymentId = body.data.id.toString();
 
-        // 2) Obtener pago desde MP
+        // 2) Consultar pago en Mercado Pago
         const client = new MercadoPagoConfig({ accessToken });
         const paymentApi = new Payment(client);
 
@@ -43,7 +49,7 @@ export async function POST(request: Request) {
 
         console.log("🔎 PAYMENT COMPLETO:", mpPayment);
 
-        // 3) Ignorar webhooks incompletos sin external_reference
+        // 3) Si no trae external_reference, ignoramos
         if (!mpPayment.external_reference) {
             console.warn("⚠ Webhook sin external_reference. Ignorando...");
             return NextResponse.json({ ok: true });
@@ -51,14 +57,13 @@ export async function POST(request: Request) {
 
         // 4) Solo procesar pagos aprobados
         if (mpPayment.status !== "approved") {
-            console.log(`⚠ Pago con estado '${mpPayment.status}'. No se procesa.`);
+            console.log(`⚠ Pago con estado '${mpPayment.status}'. Ignorado.`);
             return NextResponse.json({ ok: true });
         }
 
         const orderId = mpPayment.external_reference;
-        const supabase = await createClient();
 
-        // 5) Buscar orden
+        // 5) Buscar orden usando ADMIN CLIENT
         const { data: existingOrder } = await supabase
             .from("orders")
             .select("id, status")
@@ -66,13 +71,13 @@ export async function POST(request: Request) {
             .single();
 
         if (!existingOrder) {
-            console.error("❌ Orden no encontrada:", orderId);
+            console.error("❌ Orden no encontrada (REVISAR):", orderId);
             return NextResponse.json({ ok: true });
         }
 
         const alreadyPaid = existingOrder.status === "paid";
 
-        // 6) Actualizar orden como pagada
+        // 6) Actualizar orden
         const paymentRaw = JSON.parse(JSON.stringify(mpPayment));
 
         await supabase
@@ -89,7 +94,7 @@ export async function POST(request: Request) {
 
         console.log("🟢 ORDEN ACTUALIZADA COMO PAID:", orderId);
 
-        // 7) Descontar stock (solo si recién pasó de pending → paid)
+        // 7) Descontar stock SOLO si recién pasó de pending → paid
         if (!alreadyPaid) {
             console.log("🟢 Descontando stock...");
 
@@ -99,7 +104,6 @@ export async function POST(request: Request) {
                 .eq("order_id", orderId);
 
             for (const item of orderItems ?? []) {
-
                 const { data: product } = await supabase
                     .from("products")
                     .select("id, stock, variants")
@@ -135,7 +139,7 @@ export async function POST(request: Request) {
                     .eq("id", product.id);
             }
 
-            console.log("🟢 Stock descontado correctamente.");
+            console.log("🟢 Stock descontado exitosamente.");
         }
 
         return NextResponse.json({ ok: true });
