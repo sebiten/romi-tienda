@@ -426,7 +426,7 @@ export default function CartPage({ user }: CartPageProps) {
                   </Button>
                 )}
 
-                {user && (
+                {/* {user && (
                   <Button
                     className="w-full bg-beige-700 hover:bg-beige-800 text-white"
                     onClick={handleSendWhatsApp}
@@ -434,7 +434,7 @@ export default function CartPage({ user }: CartPageProps) {
                   >
                     Enviar Pedido por WhatsApp
                   </Button>
-                )}
+                )} */}
               </CardFooter>
             </Card>
           </div>

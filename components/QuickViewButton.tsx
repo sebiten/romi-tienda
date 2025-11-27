@@ -16,6 +16,15 @@ interface QuickViewButtonProps {
 export function QuickViewButton({ product }: QuickViewButtonProps) {
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || "")
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || "")
+  // Obtener stock actual de la variante seleccionada
+
+  const currentVariant = product.variants?.find(
+    (v: any) =>
+      v.size === selectedSize &&
+      v.color?.toLowerCase() === selectedColor?.toLowerCase()
+  );
+
+  const currentStock = currentVariant?.stock ?? 0;
 
   return (
     <Dialog>
@@ -65,11 +74,10 @@ export function QuickViewButton({ product }: QuickViewButtonProps) {
                   {product.sizes.map((size) => (
                     <button
                       key={size}
-                      className={`h-8 min-w-[2.5rem] px-2 rounded-md border text-sm ${
-                        selectedSize === size
-                          ? "bg-beige-800 text-beige-50 border-beige-800"
-                          : "bg-white text-beige-700 border-beige-200 hover:border-beige-300"
-                      }`}
+                      className={`h-8 min-w-[2.5rem] px-2 rounded-md border text-sm ${selectedSize === size
+                        ? "bg-beige-800 text-beige-50 border-beige-800"
+                        : "bg-white text-beige-700 border-beige-200 hover:border-beige-300"
+                        }`}
                       onClick={() => setSelectedSize(size)}
                     >
                       {size}
@@ -87,11 +95,10 @@ export function QuickViewButton({ product }: QuickViewButtonProps) {
                   {product.colors.map((color) => (
                     <button
                       key={color}
-                      className={`h-8 px-3 rounded-md border text-sm ${
-                        selectedColor === color
-                          ? "bg-beige-800 text-beige-50 border-beige-800"
-                          : "bg-white text-beige-700 border-beige-200 hover:border-beige-300"
-                      }`}
+                      className={`h-8 px-3 rounded-md border text-sm ${selectedColor === color
+                        ? "bg-beige-800 text-beige-50 border-beige-800"
+                        : "bg-white text-beige-700 border-beige-200 hover:border-beige-300"
+                        }`}
                       onClick={() => setSelectedColor(color)}
                     >
                       {color}
@@ -106,7 +113,8 @@ export function QuickViewButton({ product }: QuickViewButtonProps) {
               product={product}
               selectedSize={selectedSize}
               selectedColor={selectedColor}
-              className="w-full mt-2"
+              currentStock={currentStock}
+              className=""
             />
           </div>
         </div>
