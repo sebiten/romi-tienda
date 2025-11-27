@@ -176,7 +176,7 @@ export async function POST(req: Request) {
             .eq("id", order.id);
 
         return NextResponse.json({
-            init_point: result.sandbox_init_point || result.init_point,
+            init_point: result.init_point,
         });
 
     } catch (err) {
