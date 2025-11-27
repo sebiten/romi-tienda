@@ -13,23 +13,18 @@ export async function POST(request: Request) {
         const body = await request.json();
         console.log("📩 WEBHOOK RECIBIDO:", body);
 
-        // ============================
-        // 1) Filtrar eventos irrelevantes
-        // ============================
+        // 1) Verificar que sea evento de pago
         const isPayment =
             body.type === "payment" ||
             (body.action && body.action.startsWith("payment."));
 
         if (!isPayment || !body.data?.id) {
-            // Ignorar merchant_orders, claims, etc
             return NextResponse.json({ ok: true });
         }
 
         const paymentId = body.data.id.toString();
 
-        // ============================
-        // 2) Consultar pago en MP (manejo de 404)
-        // ============================
+        // 2) Obtener pago desde MP
         const client = new MercadoPagoConfig({ accessToken });
         const paymentApi = new Payment(client);
 
@@ -37,32 +32,33 @@ export async function POST(request: Request) {
         try {
             mpPayment = await paymentApi.get({ id: paymentId });
         } catch (err: any) {
-
-            // ⚠ Pago aún no está disponible → ignorar (sandbox hace esto MUCHO)
             if (err.status === 404) {
-                console.warn("⚠ Pago aún no procesado (404). Ignorando webhook temprano...");
+                console.warn("⚠ Pago aún no procesado (404). Webhook temprano ignorado.");
                 return NextResponse.json({ ok: true });
             }
 
-            // Otros errores sí cuentan
             console.error("❌ Error consultando pago en MP:", err);
             return NextResponse.json({ error: "MP error" }, { status: 500 });
         }
 
-        // ============================
-        // 3) Verificar external_reference (orderId)
-        // ============================
-        const orderId = mpPayment.external_reference;
-        if (!orderId) {
-            console.error("⚠ Pago sin external_reference → no se puede enlazar orden");
+        console.log("🔎 PAYMENT COMPLETO:", mpPayment);
+
+        // 3) Ignorar webhooks tempranos sin external_reference
+        if (!mpPayment.external_reference) {
+            console.warn("⚠ Webhook SIN external_reference (payment.created temprano). Ignorando...");
             return NextResponse.json({ ok: true });
         }
 
+        // 4) Solo procesar cuando el pago esté APROBADO
+        if (mpPayment.status !== "approved") {
+            console.log(`⚠ Pago con estado '${mpPayment.status}'. Sin acción.`);
+            return NextResponse.json({ ok: true });
+        }
+
+        const orderId = mpPayment.external_reference;
         const supabase = await createClient();
 
-        // ============================
-        // 4) Buscar orden en Supabase
-        // ============================
+        // 5) Buscar orden
         const { data: existingOrder } = await supabase
             .from("orders")
             .select("id, status")
@@ -70,53 +66,32 @@ export async function POST(request: Request) {
             .single();
 
         if (!existingOrder) {
-            console.error("⚠ Orden no encontrada:", orderId);
+            console.error("❌ Orden no encontrada:", orderId);
             return NextResponse.json({ ok: true });
         }
 
-        const wasPaid = existingOrder.status === "paid";
+        const alreadyPaid = existingOrder.status === "paid";
 
-        // ============================
-        // 5) Mapear estado MP → interno
-        // ============================
-        let newStatus: string;
-
-        switch (mpPayment.status) {
-            case "approved":
-                newStatus = "paid";
-                break;
-            case "rejected":
-            case "cancelled":
-            case "refunded":
-            case "charged_back":
-            case "in_mediation":
-                newStatus = "cancelled";
-                break;
-            default:
-                newStatus = "pending";
-        }
-
+        // 6) Actualizar orden como pagada
         const paymentRaw = JSON.parse(JSON.stringify(mpPayment));
 
-        // ============================
-        // 6) Actualizar orden
-        // ============================
         await supabase
             .from("orders")
             .update({
                 mp_payment_id: mpPayment.id?.toString(),
+                mp_preference_id: mpPayment?.order?.id ?? null,
                 payment_status: mpPayment.status,
                 payment_status_detail: mpPayment.status_detail,
                 payment_raw: paymentRaw,
-                status: newStatus,
+                status: "paid",
             })
             .eq("id", orderId);
 
-        // ============================
-        // 7) Descontar stock SOLO si recién se aprobó
-        // ============================
-        if (!wasPaid && newStatus === "paid") {
-            console.log("🟢 Descontando stock para orden:", orderId);
+        console.log("🟢 ORDEN ACTUALIZADA COMO PAID:", orderId);
+
+        // 7) Descontar stock (solo si recién se pagó)
+        if (!alreadyPaid) {
+            console.log("🟢 Descontando stock...");
 
             const { data: orderItems } = await supabase
                 .from("order_items")
