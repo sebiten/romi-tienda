@@ -1,92 +1,113 @@
-'use client'
+"use client";
 
-import { cn } from '@/lib/utils'
-import { createClient } from '@/components/clients/nextjs/lib/supabase/client'
-import { Button } from '@/components/ui/button'
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import Link from 'next/link'
-import { useState } from 'react'
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { useState } from "react";
+import { createClient } from "@/lib/client";
 
-export function ForgotPasswordForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
-  const [email, setEmail] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+export function ForgotPasswordForm({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const supabase = createClient()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    const supabase = createClient();
+    setIsLoading(true);
+    setError(null);
 
     try {
-      // The url which will be included in the email. This URL needs to be configured in your redirect URLs in the Supabase dashboard at https://supabase.com/dashboard/project/_/auth/url-configuration
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
-      })
-      if (error) throw error
-      setSuccess(true)
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+      if (error) throw error;
+      setSuccess(true);
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      setError(error instanceof Error ? error.message : "Ocurrió un error");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <div className={cn('flex flex-col gap-6', className)} {...props}>
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
       {success ? (
-        <Card>
+        <Card className="border border-[#D6CCBF] bg-[#E7E0D6] shadow-sm rounded-xl">
           <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
+            <CardTitle className="text-2xl text-[#4B3A2E]">
+              Revisá tu correo
+            </CardTitle>
+            <CardDescription className="text-[#5C4A38]">
+              Te enviamos instrucciones para recuperar tu contraseña.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              If you registered using your email and password, you will receive a password reset
-              email.
+            <p className="text-sm text-[#4B3A2E]">
+              Si tu email está registrado, vas a recibir un enlace para cambiar
+              tu contraseña.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className="border border-[#D6CCBF] bg-[#E7E0D6] shadow-sm rounded-xl">
           <CardHeader>
-            <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-            <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your password
+            <CardTitle className="text-2xl text-[#4B3A2E]">
+              Recuperar contraseña
+            </CardTitle>
+            <CardDescription className="text-[#5C4A38]">
+              Ingresá tu email y te enviaremos un enlace para restablecerla.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleForgotPassword}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-[#4B3A2E] font-medium">
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="m@example.com"
+                    placeholder="tucorreo@example.com"
                     required
+                    className="bg-white border-[#D6CCBF] text-[#4B3A2E]"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
+
                 {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Sending...' : 'Send reset email'}
+
+                <Button
+                  type="submit"
+                  className="w-full bg-[#D6CCBF] hover:bg-[#C8BCAE] text-[#4B3A2E] font-semibold rounded-lg shadow-sm transition-all"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Enviando..." : "Enviar enlace"}
                 </Button>
               </div>
-              <div className="mt-4 text-center text-sm">
-                Already have an account?{' '}
-                <Link href="/auth/login" className="underline underline-offset-4">
-                  Login
+
+              <div className="mt-4 text-center text-sm text-[#4B3A2E]">
+                ¿Ya tenés cuenta?{" "}
+                <Link
+                  href="/login"
+                  className="underline underline-offset-4 hover:text-[#2E241D]"
+                >
+                  Iniciar sesión
                 </Link>
               </div>
             </form>
@@ -94,5 +115,5 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
         </Card>
       )}
     </div>
-  )
+  );
 }

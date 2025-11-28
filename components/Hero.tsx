@@ -55,16 +55,50 @@ export default function Hero() {
         </p>
 
         {/* CTA button with hover effect */}
-        <Button variant={"outline"} className="mb-4 bg-inherit text-[#585043]">
-          <a href="/tienda" className="text-lg font-serif">Ir a la tienda</a>
-          <ShoppingCartIcon className="ml-1" />
-        </Button>
+        <a href="/tienda" className="group mb-4">
+          <Button
+            variant="ghost"
+            className="
+      relative overflow-hidden px-8 py-4 rounded-xl
+      bg-[#F3EEE6]/70 backdrop-blur-md
+      border border-[#D6C7B0]/60
+      text-[#5D4B3C] text-lg font-serif tracking-wide
+
+      shadow-[0_6px_20px_rgba(214,199,176,0.25)]
+      transition-all duration-500
+
+      group-hover:text-[#3F342A]
+      group-hover:shadow-[0_8px_28px_rgba(214,199,176,0.45)]
+      group-hover:border-[#C4B39D]
+    "
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              Ir a la tienda
+              <ShoppingCartIcon
+                className="
+          w-5 h-5 transition-transform duration-500 
+          group-hover:translate-x-1 group-hover:scale-110
+        "
+              />
+            </span>
+
+            {/* Glow cálido al hacer hover */}
+            <div
+              className="
+        absolute inset-0 opacity-0 group-hover:opacity-40
+        bg-gradient-to-r from-[#E4D7C6] to-[#D8C9AF]
+        transition-opacity duration-500
+      "
+            />
+          </Button>
+        </a>
+
         <div className="flex flex-col items-center gap-8 animate-fade-in animation-delay-500">
           {/* Login/Sign-up prompt */}
           <p className="text-sm text-[#5D4B3C]/90 font-light text-center max-w-md">
             ¿Quieres hacer una compra? <br></br>
             <a
-              href="/sign-in"
+              href="/login"
               className="underline hover:text-[#8A7B68] transition-colors"
             >
               Inicia sesión

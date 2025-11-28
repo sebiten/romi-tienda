@@ -25,7 +25,7 @@ export const signUpAction = async (formData: FormData) => {
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback`,
+      emailRedirectTo: `${origin}/callback`,
       data: {
         username: name,
         user_phone: user_phone,
@@ -56,7 +56,7 @@ export const signInAction = async (formData: FormData) => {
   });
 
   if (error) {
-    return encodedRedirect("error", "/sign-in", error.message);
+    return encodedRedirect("error", "/login", error.message);
   }
 
   return redirect("/tienda");
@@ -73,7 +73,7 @@ export const forgotPasswordAction = async (formData: FormData) => {
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?redirect_to=/protected/reset-password`,
+    redirectTo: `${origin}/callback?redirect_to=/protected/reset-password`,
   });
 
   if (error) {
@@ -132,13 +132,13 @@ export const resetPasswordAction = async (formData: FormData) => {
 
   encodedRedirect(
     "success",
-    "/sign-in",
+    "/login",
     "Password updated successfully"
   );
 };
 export const signOutAction = async () => {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  return redirect("/sign-in");
+  return redirect("/login");
 
 };

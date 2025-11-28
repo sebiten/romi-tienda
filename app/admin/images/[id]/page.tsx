@@ -17,7 +17,7 @@ export default async function ImagesPage(props: ImagesPageProps) {
     const {
         data: { user },
     } = await supabase.auth.getUser();
-    if (!user) redirect("/sign-in");
+    if (!user) redirect("/login");
 
     // Admin
     const { data: profileData, error: adminError } = await supabase

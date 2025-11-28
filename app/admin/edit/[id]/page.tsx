@@ -19,7 +19,7 @@ export default async function EditProductPage(props: {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/login");
 
   // Admin check
   const { data: profileData } = await supabase

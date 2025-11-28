@@ -11,7 +11,7 @@ export default async function NewProductPage() {
 
     // Si no hay usuario logueado, redirigimos
     if (!user) {
-        redirect("/sign-in");
+        redirect("/login");
     }
     // 3) Consultamos la tabla profiles para ver isadmin
     const { data: profileData, error } = await supabase

@@ -25,7 +25,7 @@ export default async function DeleteProductPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/sign-in");
+    redirect("/login");
   }
 
   const { data: profileData, error: adminError } = await supabase

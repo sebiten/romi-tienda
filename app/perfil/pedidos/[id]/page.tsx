@@ -16,7 +16,7 @@ export default async function PedidoDetallePage(props: {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/login");
 
   // === 2) GET ORDER WITH ITEMS + PRODUCTS ===
   const { data: order, error } = (await supabase

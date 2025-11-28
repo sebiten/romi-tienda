@@ -16,7 +16,7 @@ export default async function Perfil() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/login");
 
   const { data: profileData, error } = await supabase
     .from("profiles")
@@ -24,7 +24,7 @@ export default async function Perfil() {
     .eq("id", user.id)
     .single();
 
-  if (error || !profileData) redirect("/sign-in");
+  if (error || !profileData) redirect("/login");
 
   const email = user.email;
   const avatar =

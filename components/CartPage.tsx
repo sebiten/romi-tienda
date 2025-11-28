@@ -170,7 +170,7 @@ export default function CartPage({ user }: CartPageProps) {
 
   // MERCADO PAGO
   const handleMercadoPagoCheckout = useCallback(async () => {
-    if (!user) return router.push("/sign-in");
+    if (!user) return router.push("/login");
     if (items.length === 0) return;
 
     if (
@@ -397,7 +397,7 @@ export default function CartPage({ user }: CartPageProps) {
                   </Button>
                 ) : (
                   <Button className="bg-beige-700 text-white w-full py-4 text-lg rounded-xl" asChild>
-                    <Link href="/sign-in">Iniciar Sesión</Link>
+                    <Link href="/login">Iniciar Sesión</Link>
                   </Button>
                 )}
               </CardFooter>

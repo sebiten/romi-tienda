@@ -22,18 +22,22 @@ export function CartIcon() {
   }, [itemCount])
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className={`relative text-beige-700 hover:text-beige-800 hover:bg-beige-200/50 transition-all duration-300 
+    <div>
+      <Button
+        variant="ghost"
+        size="icon"
+        className={`relative text-beige-700 hover:text-beige-800 hover:bg-beige-200/50 transition-all duration-300 
         ${animate ? "scale-110" : "scale-100"}`}
-      aria-label={`Carrito con ${itemCount} artículos`}
-      asChild
-    >
+        aria-label={`Carrito con ${itemCount} artículos`}
+        asChild
+      >
+      </Button>
+
       <Link href="/carrito" className="relative">
         <ShoppingBag
-          size={26}
-          className={`transition-transform duration-300 
+          size={24}
+
+          className={`transition-transform text-beige-700 hover:text-beige-800 hover:bg-beige-200/50 transition-all duration-300 
             ${animate ? "rotate-6" : "rotate-0"}`}
         />
 
@@ -52,6 +56,6 @@ export function CartIcon() {
           </span>
         )}
       </Link>
-    </Button>
+    </div>
   )
 }

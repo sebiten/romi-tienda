@@ -179,7 +179,7 @@ export async function updatePasswordAction(formData: FormData) {
   }
 
   // Éxito
-  redirect("/sign-in?success=Contraseña actualizada correctamente");
+  redirect("/login?success=Contraseña actualizada correctamente");
 }
 export async function updateProductAction(formData: FormData) {
   const supabase = await createClient();
