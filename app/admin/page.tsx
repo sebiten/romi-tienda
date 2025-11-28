@@ -1,25 +1,24 @@
 import type React from "react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Package, Users, ShoppingBag, CreditCard } from "lucide-react";
 import Link from "next/link";
-import { CartItem, Order, OrderItem } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { boolean } from "zod";
-
-// Add this helper function to calculate the total
+import PedidosPage from "./pedidos/page";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  // Verificar si el usuario está autenticado
+  // ============================
+  // 1. Verificar usuario logueado
+  // ============================
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-
-  // Verificar si el usuario es administrador
+  // ============================
+  // 2. Verificar admin
+  // ============================
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("isadmin")
@@ -30,11 +29,13 @@ export default async function AdminDashboardPage() {
     return redirect("/");
   }
 
-  // Obtener estadísticas básicas
+  // ============================
+  // 3. Stats básicas
+  // ============================
   const { data: pendingOrders } = await supabase
     .from("orders")
     .select("id", { count: "exact" })
-    .eq("status", "pendiente");
+    .eq("status", "pending");
 
   const { data: totalUsers } = await supabase
     .from("profiles")
@@ -44,12 +45,29 @@ export default async function AdminDashboardPage() {
     .from("products")
     .select("id", { count: "exact" });
 
+  // ============================
+  // 4. Ventas Totales — usando columna `total` en orders
+  // ============================
+  const { data: paidOrders } = await supabase
+    .from("orders")
+    .select("total")
+    .eq("status", "paid"); // tu estado REAL en la base
+
+  const totalSales =
+    paidOrders?.reduce((acc, order) => acc + (order.total ?? 0), 0) ?? 0;
+
+  // ============================
+  // 5. Últimos pedidos
+  // ============================
   const { data: recentOrders } = await supabase
     .from("orders")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(5);
 
+  // ============================
+  // 6. Render
+  // ============================
   return (
     <main className="bg-beige-50 min-h-screen py-12 px-4">
       <div className="container mx-auto max-w-7xl">
@@ -62,7 +80,9 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
 
-        {/* Stats cards */}
+        {/* ==================== */}
+        {/* Tarjetas de estadísticas */}
+        {/* ==================== */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatsCard
             title="Pedidos Pendientes"
@@ -87,119 +107,16 @@ export default async function AdminDashboardPage() {
 
           <StatsCard
             title="Ventas Totales"
-            value="$0"
+            value={`$${totalSales.toLocaleString("es-AR")}`}
             icon={<CreditCard className="h-8 w-8 text-beige-600" />}
             href="/admin"
           />
         </div>
 
-        {/* Recent orders */}
-        <Card className="bg-white border-beige-200 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl text-beige-800">
-              Pedidos Recientes
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent>
-            {recentOrders && recentOrders.length > 0 ? (
-              <div className="divide-y divide-beige-100">
-                {recentOrders.map((order: Order) => (
-                  <div key={order.id} className="py-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-beige-800">
-                            Pedido #{order.id.slice(-6)}
-                          </p>
-                          <span
-                            className={`px-2 py-0.5 text-xs rounded-full ${order.status === "pendiente-pago"
-                              ? "bg-amber-100 text-amber-800"
-                              : order.status === "pagado"
-                                ? "bg-green-100 text-green-800"
-                                : order.status === "cancelado"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}
-                          >
-                            {order.status}
-                          </span>
-                        </div>
-                        {order.profiles && (
-                          <p className="text-sm text-beige-600 mt-1">
-                            Cliente:{" "}
-                            {order.profiles.first_name ||
-                              order.profiles.email ||
-                              "Usuario " + order.user_id.slice(-6)}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-beige-600">
-                          {new Date(order.created_at).toLocaleDateString(
-                            "es-AR",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Order Items */}
-                    {order.items && order.items.length > 0 && (
-                      <div className="bg-beige-50 rounded-md p-3 mb-3">
-                        <p className="text-sm font-medium text-beige-700 mb-2">
-                          Productos:
-                        </p>
-                        <div className="space-y-2">
-                          {order.items.map((item) => (
-                            <div
-                              key={item.id}
-                              className="flex justify-between text-sm"
-                            >
-                              <div>
-                                <span className="text-beige-800">
-                                  {item.product?.title ||
-                                    "Producto " + item.product_id.slice(-6)}
-                                </span>
-                                <span className="text-beige-600 ml-2">
-                                  {item.quantity}x {item.size}{" "}
-                                  {item.color && `- ${item.color}`}
-                                </span>
-                              </div>
-                              <span className="font-medium text-beige-800">
-                                ${item.product?.price || "—"}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <Button className="flex justify-between items-center">
-                      <Link
-                        href={`/admin/pedidos/${order.id}`}
-                        className="text-xs text-beige-800 underline hover:text-beige-600"
-                      >
-                        Ver detalles completos
-                      </Link>
-
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center py-6 text-beige-600">
-                No hay pedidos recientes
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        {/* ==================== */}
+        {/* Pedidos recientes */}
+        {/* ==================== */}
+        <PedidosPage />
       </div>
     </main>
   );
@@ -218,7 +135,7 @@ function StatsCard({
 }) {
   return (
     <Link href={href}>
-      <Card className="bg-white border-beige-200 shadow-sm hover:shadow-md transition-shadow">
+      <Card className="bg-white border-beige-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
         <CardContent className="p-6">
           <div className="flex justify-between items-center">
             <div>
@@ -231,18 +148,4 @@ function StatsCard({
       </Card>
     </Link>
   );
-}
-
-// Add this helper function to calculate the total
-function calculateOrderTotal(order: Order): string {
-  if (!order.items || order.items.length === 0) return "0.00";
-
-  return order.items
-    .reduce((total, item) => {
-      const itemPrice =
-        item.price ||
-        (item.product?.price ? item.product.price * item.quantity : 0);
-      return total + (itemPrice || 0);
-    }, 0)
-    .toFixed(2);
 }

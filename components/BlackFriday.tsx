@@ -42,7 +42,7 @@ const BlackFridayBanner: React.FC<BlackFridayBannerProps> = ({
           {subtitle}
         </p>
         <Link href={ctaLink}>
-          <Button className="mt-8">
+          <Button className="mt-6 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-md shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
             {ctaLabel}
           </Button>
         </Link>

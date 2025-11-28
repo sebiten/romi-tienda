@@ -98,7 +98,8 @@ export type Order = {
 
   // Estado del pedido
   status: string; // "pending", "paid", "cancelled", etc.
-
+  discount?: number | null;
+  shipping_amount?: number | null;
   // Totales
   total?: number | null;
   shipping_cost?: number | null;

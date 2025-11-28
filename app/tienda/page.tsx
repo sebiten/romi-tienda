@@ -124,10 +124,7 @@ const DesktopFilters = memo(
                           onCheckedChange={() => toggleCategory(category.id)}
                           className="border-beige-300 data-[state=checked]:bg-beige-700 data-[state=checked]:border-beige-700"
                         />
-                        <label
-                          htmlFor={`category-${category.id}`}
-                          className="ml-2 text-sm text-beige-700 cursor-pointer"
-                        >
+                        <label htmlFor={`category-${category.id}`} className="ml-2 text-sm text-beige-700 cursor-pointer">
                           {category.name}
                         </label>
                       </div>
@@ -224,10 +221,7 @@ const MobileFilters = memo(
                   onCheckedChange={() => toggleCategory(category.id)}
                   className="border-beige-300 data-[state=checked]:bg-beige-700 data-[state=checked]:border-beige-700"
                 />
-                <label
-                  htmlFor={`mobile-category-${category.id}`}
-                  className="ml-2 text-sm text-beige-700 cursor-pointer"
-                >
+                <label htmlFor={`mobile-category-${category.id}`} className="ml-2 text-sm text-beige-700 cursor-pointer">
                   {category.name}
                 </label>
               </div>
@@ -334,6 +328,10 @@ export default function TiendaPage() {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
   const [isLoadingCategories, setIsLoadingCategories] = useState(true)
 
+  // PAGINACIÓN
+  const [currentPage, setCurrentPage] = useState(1)
+  const productsPerPage = 9
+
   // Fetch products on component mount
   useEffect(() => {
     fetchProducts()
@@ -363,8 +361,8 @@ export default function TiendaPage() {
     fetchCategories()
   }, [])
 
-  // Filter and sort products
-  const filteredProducts = useMemo(() => {
+  // Filter, sort & paginate products
+  const { paginated, totalPages } = useMemo(() => {
     let result = [...products]
 
     // Apply category filter
@@ -391,27 +389,40 @@ export default function TiendaPage() {
     // Apply sorting
     switch (sortOption) {
       case "newest":
-        return result.sort((a, b) => {
+        result = result.sort((a, b) => {
           const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
           const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
           return dateB - dateA
         })
+        break
       case "price-asc":
-        return result.sort((a, b) => (a.price || 0) - (b.price || 0))
+        result = result.sort((a, b) => (a.price || 0) - (b.price || 0))
+        break
       case "price-desc":
-        return result.sort((a, b) => (b.price || 0) - (a.price || 0))
+        result = result.sort((a, b) => (b.price || 0) - (a.price || 0))
+        break
       case "name-asc":
-        return result.sort((a, b) => a.title.localeCompare(b.title))
-      default:
-        return result
+        result = result.sort((a, b) => a.title.localeCompare(b.title))
+        break
     }
-  }, [products, selectedCategories, priceRange, sortOption, searchQuery])
+
+    // ---------- PAGINACIÓN ----------
+    const totalPages = Math.ceil(result.length / productsPerPage)
+    const startIndex = (currentPage - 1) * productsPerPage
+    const currentProducts = result.slice(startIndex, startIndex + productsPerPage)
+
+    return {
+      paginated: currentProducts,
+      totalPages,
+    }
+  }, [products, selectedCategories, priceRange, sortOption, searchQuery, currentPage])
 
   // Toggle category selection
   const toggleCategory = useCallback((categoryId: string) => {
     setSelectedCategories((prev) =>
       prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId],
     )
+    setCurrentPage(1) // reset paginación al cambiar filtro
   }, [])
 
   // Clear all filters
@@ -420,6 +431,7 @@ export default function TiendaPage() {
     setPriceRange([0, 20000])
     setSearchQuery("")
     setSortOption("newest")
+    setCurrentPage(1)
   }, [])
 
   // Get category name by ID
@@ -430,11 +442,6 @@ export default function TiendaPage() {
     },
     [categories],
   )
-
-  // Handle search query change
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value)
-  }, [])
 
   return (
     <main className="bg-beige-50 min-h-screen py-12 px-4">
@@ -515,7 +522,7 @@ export default function TiendaPage() {
             {/* Desktop sorting and results count */}
             <div className="hidden md:flex justify-between items-center mb-6">
               <p className="text-beige-600">
-                Mostrando <span className="font-medium text-beige-800">{filteredProducts.length}</span> productos
+                Mostrando <span className="font-medium text-beige-800">{paginated.length}</span> productos
               </p>
 
               <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
@@ -571,18 +578,68 @@ export default function TiendaPage() {
                   Reintentar
                 </Button>
               </div>
-            ) : filteredProducts.length === 0 ? (
+            ) : paginated.length === 0 ? (
               <EmptyState clearFilters={clearFilters} />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    getCategoryNameById={getCategoryNameById}
-                  />
-                ))}
-              </div>
+              <>
+                {/* GRID PAGINADA */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {paginated.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      getCategoryNameById={getCategoryNameById}
+                    />
+                  ))}
+                </div>
+
+                {/* PAGINACIÓN NUMERADA */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-10 flex-wrap">
+
+                    {/* Botón Anterior */}
+                    <Button
+                      variant="outline"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => p - 1)}
+                      className="border-beige-300 text-beige-700 hover:bg-beige-100"
+                    >
+                      Anterior
+                    </Button>
+
+                    {/* Botones numerados */}
+                    <div className="flex gap-2">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          onClick={() => setCurrentPage(page)}
+                          className={`
+                            w-10 h-10 
+                            ${currentPage === page
+                              ? "bg-beige-700 text-white hover:bg-beige-800"
+                              : "border-beige-300 text-beige-700 hover:bg-beige-100"
+                            }
+                          `}
+                        >
+                          {page}
+                        </Button>
+                      ))}
+                    </div>
+
+                    {/* Botón Siguiente */}
+                    <Button
+                      variant="outline"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage((p) => p + 1)}
+                      className="border-beige-300  hover:bg-beige-100 text-black"
+                    >
+                      Siguiente
+                    </Button>
+
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

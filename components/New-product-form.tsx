@@ -39,7 +39,7 @@ export default function NewProductForm() {
   const AVAILABLE_SIZES =
     productType === "ropa"
       ? ["XS", "S", "M", "L", "XL", "XXL"]
-      : ["35", "36", "37", "38", "39", "40", "41", "42"];
+      : ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
 
   const supabase = createClient();
   const formRef = useRef<HTMLFormElement>(null);
@@ -185,12 +185,6 @@ export default function NewProductForm() {
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-lg mx-auto">
-      {formError && (
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{formError}</AlertDescription>
-        </Alert>
-      )}
 
       {/* TÍTULO */}
       <label>
@@ -257,6 +251,7 @@ export default function NewProductForm() {
           Agregar variante
         </Button>
 
+
         {variants.length > 0 && (
           <ul className="mt-2 space-y-1 text-sm">
             {variants.map((v, i) => (
@@ -289,6 +284,12 @@ export default function NewProductForm() {
           ))}
         </select>
       </label>
+      {formError && (
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      )}
 
       {/* IMÁGENES */}
       <label>
