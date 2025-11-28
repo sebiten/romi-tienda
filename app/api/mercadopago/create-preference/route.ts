@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import MercadoPagoConfig, { Preference } from "mercadopago";
 
-// mas adelante ver lo del codigo postal para calcular el precio verlo aqui
-
 export async function POST(req: Request) {
     try {
         const body = await req.json();
@@ -11,26 +9,16 @@ export async function POST(req: Request) {
 
         console.log("📦 RECIBIDO EN BACKEND:", body);
 
-        // =========================
-        // 1) VALIDACIONES BÁSICAS
-        // =========================
-        if (!userId) {
-            return NextResponse.json({ error: "Falta userId" }, { status: 400 });
-        }
+        /* ============================
+           1) VALIDACIONES BÁSICAS
+        ============================ */
+        if (!userId) return NextResponse.json({ error: "Falta userId" }, { status: 400 });
 
-        if (!items || items.length === 0) {
-            return NextResponse.json(
-                { error: "No hay items en el pedido" },
-                { status: 400 }
-            );
-        }
+        if (!items?.length)
+            return NextResponse.json({ error: "No hay items en el pedido" }, { status: 400 });
 
-        if (!shippingData) {
-            return NextResponse.json(
-                { error: "Faltan datos de envío" },
-                { status: 400 }
-            );
-        }
+        if (!shippingData)
+            return NextResponse.json({ error: "Faltan datos de envío" }, { status: 400 });
 
         const requiredFields = ["name", "phone", "address", "city", "province", "cp"] as const;
         for (const field of requiredFields) {
@@ -42,23 +30,23 @@ export async function POST(req: Request) {
             }
         }
 
-        // ENVÍO numérico
         const shippingAmount =
             typeof shippingCost === "number" && shippingCost >= 0 ? shippingCost : 0;
 
         const supabase = await createClient();
 
-        // =========================
-        // 2) VALIDAR STOCK
-        // =========================
+        /* ============================
+           2) VALIDAR STOCK (BACKEND)
+        ============================ */
+
         for (const item of items) {
-            const { data: product } = await supabase
+            const { data: product, error: prodErr } = await supabase
                 .from("products")
                 .select("id, title, variants")
                 .eq("id", item.product_id)
                 .single();
 
-            if (!product) {
+            if (prodErr || !product) {
                 return NextResponse.json(
                     { error: `Producto no encontrado: ${item.title}` },
                     { status: 400 }
@@ -83,16 +71,17 @@ export async function POST(req: Request) {
             if (variant.stock < item.quantity) {
                 return NextResponse.json(
                     {
-                        error: `Stock insuficiente para ${item.title}. Disponible: ${variant.stock}`,
+                        error: `Stock insuficiente para ${item.title} — Disponible: ${variant.stock}`,
                     },
                     { status: 400 }
                 );
             }
         }
 
-        // =========================
-        // 3) CREAR ORDEN
-        // =========================
+        /* ============================
+           3) CREAR ORDEN
+        ============================ */
+
         const subtotal = items.reduce(
             (acc: number, it: any) => acc + it.quantity * it.unit_price,
             0
@@ -120,17 +109,12 @@ export async function POST(req: Request) {
 
         if (orderError || !order) {
             console.error("❌ ERROR creando orden:", orderError);
-            return NextResponse.json(
-                { error: "Error al crear la orden" },
-                { status: 500 }
-            );
+            return NextResponse.json({ error: "Error al crear la orden" }, { status: 500 });
         }
 
-        console.log("🟢 ORDEN NUEVA:", order.id);
-
-        // =========================
-        // 4) INSERTAR order_items
-        // =========================
+        /* ============================
+           4) INSERTAR order_items
+        ============================ */
         for (const item of items) {
             await supabase.from("order_items").insert({
                 order_id: order.id,
@@ -142,23 +126,18 @@ export async function POST(req: Request) {
             });
         }
 
-        // =========================
-        // 5) CREAR PREFERENCIA MP
-        // =========================
+        /* ============================
+           5) CREAR PREFERENCIA MP
+        ============================ */
         const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
         const siteURL = process.env.NEXT_PUBLIC_SITE_URL;
 
-        if (!accessToken) {
-            return NextResponse.json(
-                { error: "MP no configurado" },
-                { status: 500 }
-            );
-        }
+        if (!accessToken)
+            return NextResponse.json({ error: "MP no configurado" }, { status: 500 });
 
         const mpClient = new MercadoPagoConfig({ accessToken });
         const preference = new Preference(mpClient);
 
-        // Productos
         const mpItems = items.map((it: any) => ({
             title: `${it.title} - ${it.color} - Talle ${it.size}`,
             description: `Color: ${it.color} - Talle: ${it.size}`,
@@ -168,22 +147,18 @@ export async function POST(req: Request) {
             picture_url: it.image ?? `${siteURL}/default-product.png`,
         }));
 
-        // 🔥 DESCUENTO como ítem negativo
         if (discount && discount > 0) {
             mpItems.push({
-                title: "Descuento (10% por 6+ prendas)",
-                description: "Descuento automático",
+                title: "Descuento automático",
                 quantity: 1,
                 unit_price: -discount,
                 currency_id: "ARS",
             });
         }
 
-        // 🔥 ENVÍO como ítem aparte
         if (shippingAmount > 0) {
             mpItems.push({
                 title: "Costo de envío",
-                description: "Envío a domicilio",
                 quantity: 1,
                 unit_price: shippingAmount,
                 currency_id: "ARS",
@@ -207,17 +182,11 @@ export async function POST(req: Request) {
 
         console.log("🎯 PREFERENCIA CREADA:", pref.id);
 
-        // =========================
-        // 6) GUARDAR PREFERENCE ID
-        // =========================
         await supabase
             .from("orders")
             .update({ mp_preference_id: pref.id })
             .eq("id", order.id);
 
-        // =========================
-        // 7) RESPUESTA
-        // =========================
         return NextResponse.json({
             init_point:
                 pref.init_point ??

@@ -20,6 +20,8 @@ import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/app/store/cartStore";
 import { createOrderAction } from "@/app/admin/actions";
+import { createClient } from "@/lib/client";
+import { toast } from "sonner";
 
 // Interfaces
 interface CartItem {
@@ -158,6 +160,47 @@ export default function CartPage({ user }: CartPageProps) {
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
 
+  useEffect(() => {
+    const syncCartStock = async () => {
+      if (items.length === 0) return;
+
+      const supabase = createClient();
+      let removedSomething = false;
+
+      for (const item of items) {
+        // Buscar el producto
+        const { data: product } = await supabase
+          .from("products")
+          .select("variants")
+          .eq("id", item.product_id)
+          .single();
+
+        if (!product) continue;
+
+        const variant = product.variants?.find(
+          (v: any) =>
+            v.color?.toLowerCase() === item.color?.toLowerCase() &&
+            v.size === item.size
+        );
+
+        const stock = variant?.stock ?? 0;
+
+        if (stock <= 0) {
+          removeFromCart(item.id);
+          removedSomething = true;
+        }
+      }
+
+      if (removedSomething) {
+        toast.error(
+          "Algunos productos fueron eliminados del carrito por falta de stock."
+        );
+      }
+    };
+
+    syncCartStock();
+  }, []);
+
   // Datos de envío
   const [shippingData, setShippingData] = useState({
     name: "",
@@ -187,6 +230,35 @@ export default function CartPage({ user }: CartPageProps) {
     setLoading(true);
 
     try {
+      // ===========================
+      // VALIDACIÓN DE STOCK (FRONTEND)
+      // ===========================
+      const supabase = createClient();
+
+      for (const item of items) {
+        const { data: variant } = await supabase
+          .from("product_variants")
+          .select("stock")
+          .eq("product_id", item.product_id)
+          .eq("size", item.size)
+          .eq("color", item.color)
+          .single();
+
+        const available = variant?.stock ?? 0;
+
+        if (available < item.quantity) {
+          removeFromCart(item.id);
+          alert(
+            `El producto "${item.name}" ya no tiene stock suficiente y fue eliminado del carrito.`
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
+      // ===========================
+      // CREAR PREFERENCIA MP
+      // ===========================
       const mpItems = items.map((item) => ({
         product_id: item.product_id,
         title: item.name,
@@ -203,20 +275,21 @@ export default function CartPage({ user }: CartPageProps) {
           userId: user.id,
           items: mpItems,
           shippingData,
-          shippingCost: shipping,   // ✔ ENVÍO REAL desde tu store
-          discount
+          shippingCost: shipping,
+          discount,
         }),
-
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        console.error(data.error);
+        alert(data.error || "Error al crear la preferencia de pago.");
+        setLoading(false);
         return;
       }
 
       window.location.href = data.init_point;
+
     } catch (error) {
       console.error("Error en checkout MP:", error);
     } finally {
