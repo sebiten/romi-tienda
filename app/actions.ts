@@ -119,7 +119,7 @@ export const resetPasswordAction = async (formData: FormData) => {
   }
 
   const { error } = await supabase.auth.updateUser({
-    password: password,
+    password,
   });
 
   if (error) {
@@ -130,9 +130,12 @@ export const resetPasswordAction = async (formData: FormData) => {
     );
   }
 
-  encodedRedirect("success", "/protected/reset-password", "Password updated");
+  encodedRedirect(
+    "success",
+    "/sign-in",
+    "Password updated successfully"
+  );
 };
-
 export const signOutAction = async () => {
   const supabase = await createClient();
   await supabase.auth.signOut();

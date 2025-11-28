@@ -1,37 +1,51 @@
-import { resetPasswordAction } from "@/app/actions";
-import { FormMessage, Message } from "@/components/form-message";
+import { createClient } from "@/utils/supabase/server";
+import { FormMessage } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { resetPasswordAction } from "@/app/actions";
 
-export default async function ResetPassword(props: {
-  searchParams: Promise<Message>;
+export default async function ResetPasswordPage({
+  searchParams,
+}: {
+  searchParams?: Record<string, string | undefined>;
 }) {
-  const searchParams = await props.searchParams;
+  const supabase = await createClient();
+
+  if (searchParams?.code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(
+      searchParams.code
+    );
+
+    if (error) {
+      return (
+        <p className="text-red-500 text-center">
+          Invalid or expired reset link.
+        </p>
+      );
+    }
+  }
+
   return (
     <form className="flex flex-col w-full max-w-md p-4 gap-2 [&>input]:mb-4">
       <h1 className="text-2xl font-medium">Reset password</h1>
-      <p className="text-sm text-foreground/60">
-        Please enter your new password below.
-      </p>
-      <Label htmlFor="password">New password</Label>
-      <Input
-        type="password"
-        name="password"
-        placeholder="New password"
-        required
-      />
-      <Label htmlFor="confirmPassword">Confirm password</Label>
-      <Input
-        type="password"
-        name="confirmPassword"
-        placeholder="Confirm password"
-        required
-      />
+
+      <Label>New password</Label>
+      <Input type="password" name="password" required />
+
+      <Label>Confirm password</Label>
+      <Input type="password" name="confirmPassword" required />
+
       <SubmitButton formAction={resetPasswordAction}>
         Reset password
       </SubmitButton>
-      <FormMessage message={searchParams} />
+
+      <FormMessage
+        message={{
+          error: searchParams?.error ?? "",
+          success: searchParams?.success ?? "",
+        }}
+      />
     </form>
   );
 }

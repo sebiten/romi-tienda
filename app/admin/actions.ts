@@ -153,7 +153,34 @@ export async function createOrderAction(
 
   return order.id;
 }
+export async function updatePasswordAction(formData: FormData) {
+  const password = formData.get("password") as string;
 
+  if (!password || password.length < 6) {
+    redirect("/update-password?error=La contraseña debe tener al menos 6 caracteres");
+  }
+
+  const supabase = await createClient();
+
+  // ⚠️ Necesita que el usuario venga autenticado desde el enlace mágico de Supabase
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/update-password?error=No se pudo validar el usuario");
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    redirect("/update-password?error=No se pudo actualizar la contraseña");
+  }
+
+  // Éxito
+  redirect("/sign-in?success=Contraseña actualizada correctamente");
+}
 export async function updateProductAction(formData: FormData) {
   const supabase = await createClient();
 
