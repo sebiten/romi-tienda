@@ -1,5 +1,6 @@
 import { signInAction } from "@/app/actions"
-import { FormMessage, type Message } from "@/components/form-message"
+import { FormMessage } from "@/components/form-message";
+
 import { SubmitButton } from "@/components/submit-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import Link from "next/link"
 import { LucideGithub, ChromeIcon as LucideGoogle, LucideLock, LucideMail } from "lucide-react"
 
-export default async function Login(props: { searchParams: Promise<Message> }) {
+export default async function Login(props: { searchParams: { [key: string]: string | undefined } }) {
   const searchParams = await props.searchParams
 
   return (
@@ -68,7 +69,7 @@ export default async function Login(props: { searchParams: Promise<Message> }) {
             </SubmitButton>
           </form>
 
-      
+
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">

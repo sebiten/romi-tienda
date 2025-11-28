@@ -1,5 +1,5 @@
 import { signUpAction } from "@/app/actions"
-import { FormMessage, type Message } from "@/components/form-message"
+import { FormMessage } from "@/components/form-message"
 import { SubmitButton } from "@/components/submit-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Link from "next/link"
 import { LucideGithub, ChromeIcon as LucideGoogle, LucideUser, LucideMail, LucideLock, LucidePhone } from "lucide-react"
 
-export default async function Signup(props: { searchParams: Promise<Message> }) {
+export default async function Signup(props: { searchParams: { [key: string]: string | undefined } }) {
   const searchParams = await props.searchParams
 
   return (
@@ -89,7 +89,7 @@ export default async function Signup(props: { searchParams: Promise<Message> }) 
             </SubmitButton>
           </form>
 
-       
+
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">
