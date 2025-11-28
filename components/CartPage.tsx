@@ -204,6 +204,7 @@ export default function CartPage({ user }: CartPageProps) {
           items: mpItems,
           shippingData,
           shippingCost: shipping,   // ✔ ENVÍO REAL desde tu store
+          discount
         }),
 
       });

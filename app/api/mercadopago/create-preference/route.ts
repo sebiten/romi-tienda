@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import MercadoPagoConfig, { Preference } from "mercadopago";
 
+// mas adelante ver lo del codigo postal para calcular el precio verlo aqui
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { userId, items, shippingData, shippingCost } = body;
+        const { userId, items, shippingData, shippingCost, discount } = body;
 
         console.log("📦 RECIBIDO EN BACKEND:", body);
 
@@ -40,7 +42,7 @@ export async function POST(req: Request) {
             }
         }
 
-        // Envío numérico (0 o 150 según tu cart)
+        // ENVÍO numérico
         const shippingAmount =
             typeof shippingCost === "number" && shippingCost >= 0 ? shippingCost : 0;
 
@@ -89,13 +91,14 @@ export async function POST(req: Request) {
         }
 
         // =========================
-        // 3) CREAR ORDEN EN SUPABASE
+        // 3) CREAR ORDEN
         // =========================
         const subtotal = items.reduce(
             (acc: number, it: any) => acc + it.quantity * it.unit_price,
             0
         );
-        const total = subtotal + shippingAmount;
+
+        const total = subtotal - (discount || 0) + shippingAmount;
 
         const { data: order, error: orderError } = await supabase
             .from("orders")
@@ -103,7 +106,8 @@ export async function POST(req: Request) {
                 user_id: userId,
                 status: "pending",
                 total,
-
+                discount: discount || 0,
+                shipping_amount: shippingAmount,
                 shipping_name: shippingData.name,
                 shipping_phone: shippingData.phone,
                 shipping_address: shippingData.address,
@@ -125,7 +129,7 @@ export async function POST(req: Request) {
         console.log("🟢 ORDEN NUEVA:", order.id);
 
         // =========================
-        // 4) INSERTAR ITEMS EN order_items
+        // 4) INSERTAR order_items
         // =========================
         for (const item of items) {
             await supabase.from("order_items").insert({
@@ -154,7 +158,7 @@ export async function POST(req: Request) {
         const mpClient = new MercadoPagoConfig({ accessToken });
         const preference = new Preference(mpClient);
 
-        // Items de productos
+        // Productos
         const mpItems = items.map((it: any) => ({
             title: `${it.title} - ${it.color} - Talle ${it.size}`,
             description: `Color: ${it.color} - Talle: ${it.size}`,
@@ -164,7 +168,18 @@ export async function POST(req: Request) {
             picture_url: it.image ?? `${siteURL}/default-product.png`,
         }));
 
-        // Agregar envío solo si es > 0
+        // 🔥 DESCUENTO como ítem negativo
+        if (discount && discount > 0) {
+            mpItems.push({
+                title: "Descuento (10% por 6+ prendas)",
+                description: "Descuento automático",
+                quantity: 1,
+                unit_price: -discount,
+                currency_id: "ARS",
+            });
+        }
+
+        // 🔥 ENVÍO como ítem aparte
         if (shippingAmount > 0) {
             mpItems.push({
                 title: "Costo de envío",
@@ -172,7 +187,7 @@ export async function POST(req: Request) {
                 quantity: 1,
                 unit_price: shippingAmount,
                 currency_id: "ARS",
-                picture_url: `${siteURL}/shipping.png`, // opcional, podés quitarlo
+                picture_url: `${siteURL}/shipping.png`,
             });
         }
 
@@ -193,7 +208,7 @@ export async function POST(req: Request) {
         console.log("🎯 PREFERENCIA CREADA:", pref.id);
 
         // =========================
-        // 6) GUARDAR mp_preference_id EN LA ORDEN
+        // 6) GUARDAR PREFERENCE ID
         // =========================
         await supabase
             .from("orders")
@@ -208,6 +223,7 @@ export async function POST(req: Request) {
                 pref.init_point ??
                 `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${pref.id}`,
         });
+
     } catch (err) {
         console.error("❌ ERROR create-preference:", err);
         return NextResponse.json(
