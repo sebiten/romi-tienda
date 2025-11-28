@@ -155,7 +155,7 @@ export const useCartStore = create<CartState>()(
         }
 
         // Costo de envío: $2500 fijo, o gratis si supera $200000
-        const shipping = subtotal > 80000 ? 0 : 2500;
+        const shipping = subtotal > 80000 ? 0 : 100;
 
         // Total final
         const total = subtotal - discount + shipping;
