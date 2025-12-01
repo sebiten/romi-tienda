@@ -1,6 +1,13 @@
 "use client";
 
-import { useRef, useState, FormEvent, useEffect } from "react";
+import {
+  useRef,
+  useState,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +17,7 @@ import { X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
-const MAX_SIZE = 2 * 1024 * 1024;
+const MAX_SIZE = 3 * 1024 * 1024;
 const MAX_FILES = 5;
 
 type ProductVariant = {
@@ -19,33 +26,43 @@ type ProductVariant = {
   stock: number;
 };
 
+// 🔹 NORMALIZAR SIEMPRE (frontend)
+const normalize = (str: string) =>
+  str
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
 export default function NewProductForm() {
   const [submitting, setSubmitting] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
+    []
+  );
 
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
-
-  // 🔹 productType (ropa/calzado)
   const [productType, setProductType] = useState<"ropa" | "calzado">("ropa");
 
-  // 🔹 variantes
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [variantColor, setVariantColor] = useState("");
   const [variantSize, setVariantSize] = useState("");
   const [variantStock, setVariantStock] = useState("");
 
-  const AVAILABLE_SIZES =
-    productType === "ropa"
-      ? ["XS", "S", "M", "L", "XL", "XXL"]
-      : ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
-
   const supabase = createClient();
   const formRef = useRef<HTMLFormElement>(null);
   const { toast } = useToast();
 
-  const handleAddVariant = () => {
+  // 🔹 Memo para evitar recrear arrays en cada render
+  const AVAILABLE_SIZES = useMemo(
+    () =>
+      productType === "ropa"
+        ? ["XS", "S", "M", "L", "XL", "XXL"]
+        : ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"],
+    [productType]
+  );
+
+  const handleAddVariant = useCallback(() => {
     if (!variantColor.trim() || !variantSize || !variantStock) {
       setFormError("Completa color, talle y stock antes de agregar.");
       return;
@@ -54,7 +71,7 @@ export default function NewProductForm() {
     setVariants((prev) => [
       ...prev,
       {
-        color: variantColor.trim(),
+        color: normalize(variantColor), // NORMALIZADO
         size: variantSize,
         stock: Number(variantStock),
       },
@@ -64,128 +81,169 @@ export default function NewProductForm() {
     setVariantSize("");
     setVariantStock("");
     setFormError(null);
-  };
+  }, [variantColor, variantSize, variantStock]);
 
-  const handleRemoveVariant = (index: number) => {
+  const handleRemoveVariant = useCallback((index: number) => {
     setVariants((prev) => prev.filter((_, i) => i !== index));
-  };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setFormError(null);
-
-    if (variants.length === 0) {
-      setFormError("Debes agregar al menos una variante (color+talle+stock).");
-      setSubmitting(false);
-      return;
-    }
-
-    // 🔹 Derivar stock total
-    const stock = variants.reduce((acc, v) => acc + v.stock, 0);
-    const sizes = Array.from(new Set(variants.map((v) => v.size)));
-    const colors = Array.from(new Set(variants.map((v) => v.color)));
-
-    const publicUrls: string[] = [];
-    const uploadedFileNames: string[] = [];
-
-    // SUBIR IMÁGENES
-    try {
-      for (const file of files) {
-        if (file.size > MAX_SIZE) {
-          setFormError(`La imagen "${file.name}" excede los 2MB.`);
-          setSubmitting(false);
-          return;
-        }
-
-        const webpBlob = await convertImageToWebP(file);
-        const fileName = `${Date.now()}-${file.name.split(".")[0]}.webp`;
-        const webpFile = new File([webpBlob], fileName, { type: "image/webp" });
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("product-images")
-          .upload(fileName, webpFile);
-
-        if (uploadError) {
-          setFormError(uploadError.message);
-          setSubmitting(false);
-          return;
-        }
-
-        const { data } = supabase.storage.from("product-images").getPublicUrl(uploadData.path);
-        publicUrls.push(data.publicUrl);
-        uploadedFileNames.push(fileName);
-      }
-    } catch (err) {
-      console.error(err);
-      setFormError("Error subiendo imágenes.");
-      setSubmitting(false);
-      return;
-    }
-
-    if (!formRef.current) return;
-    const formData = new FormData(formRef.current);
-
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const price = Number(formData.get("price"));
-    const category_id = formData.get("category_id") as string;
-
-    if (!title || title.length < 3) {
-      setFormError("El título debe tener al menos 3 caracteres.");
-      setSubmitting(false);
-      return;
-    }
-
-    // INSERT SUPABASE
-    const { error: insertError } = await supabase.from("products").insert([
-      {
-        title,
-        description,
-        price,
-        images: publicUrls,
-        productType, // 👈 NUEVO
-        variants, // 👈 NUEVO
-        stock,
-        sizes,
-        colors,
-        category_id,
-      },
-    ]);
-
-    if (insertError) {
-      console.error(insertError);
-
-      await supabase.storage.from("product-images").remove(uploadedFileNames);
-
-      setFormError("Error creando producto.");
-      setSubmitting(false);
-      return;
-    }
-
-    toast({
-      title: "Producto creado",
-      description: `El producto "${title}" fue creado correctamente.`,
+    // Liberar memoria del preview
+    setPreviewUrls((prev) => {
+      const urlToRevoke = prev[index];
+      if (urlToRevoke) URL.revokeObjectURL(urlToRevoke);
+      return prev.filter((_, i) => i !== index);
     });
 
-    setSubmitting(false);
-    formRef.current.reset();
-    setVariants([]);
-    setFiles([]);
-    setPreviewUrls([]);
-  };
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
-  // Cargar categorías
+  const handleSubmit = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
+      setSubmitting(true);
+      setFormError(null);
+
+      if (variants.length === 0) {
+        setFormError("Debes agregar al menos una variante.");
+        setSubmitting(false);
+        return;
+      }
+
+      const stock = variants.reduce((acc, v) => acc + v.stock, 0);
+      const sizes = Array.from(new Set(variants.map((v) => v.size)));
+      const colors = Array.from(new Set(variants.map((v) => v.color)));
+
+      let publicUrls: string[] = [];
+      let uploadedFileNames: string[] = [];
+
+      // SUBIR IMÁGENES EN PARALELO
+      try {
+        const uploadResults = await Promise.all(
+          files.map(async (file) => {
+            if (file.size > MAX_SIZE) {
+              throw new Error(
+                `La imagen "${file.name}" excede los 2MB.`
+              );
+            }
+
+            const webpBlob = await convertImageToWebP(file);
+            const fileName = `${Date.now()}-${file.name.split(".")[0]
+              }.webp`;
+            const webpFile = new File([webpBlob], fileName, {
+              type: "image/webp",
+            });
+
+            const { data: uploadData, error: uploadError } =
+              await supabase.storage
+                .from("product-images")
+                .upload(fileName, webpFile);
+
+            if (uploadError || !uploadData) {
+              throw new Error(uploadError?.message || "Error subiendo imagen");
+            }
+
+            const { data } = supabase.storage
+              .from("product-images")
+              .getPublicUrl(uploadData.path);
+
+            return {
+              publicUrl: data.publicUrl,
+              fileName,
+            };
+          })
+        );
+
+        publicUrls = uploadResults.map((r) => r.publicUrl);
+        uploadedFileNames = uploadResults.map((r) => r.fileName);
+      } catch (err: any) {
+        console.error(err);
+        setFormError(err?.message || "Error subiendo imágenes.");
+        setSubmitting(false);
+        return;
+      }
+
+      if (!formRef.current) {
+        setSubmitting(false);
+        return;
+      }
+
+      const formData = new FormData(formRef.current);
+
+      const rawTitle = formData.get("title") as string;
+      const rawDescription = (formData.get("description") as string) || "";
+
+      const title = normalize(rawTitle);
+      const description = normalize(rawDescription);
+
+      const price = Number(formData.get("price"));
+      const category_id = formData.get("category_id") as string;
+
+      const normalizedVariants = variants.map((v) => ({
+        ...v,
+        color: normalize(v.color),
+      }));
+
+      const res = await fetch("/api/products/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          description,
+          price,
+          images: publicUrls,
+          productType,
+          variants: normalizedVariants,
+          stock,
+          sizes,
+          colors,
+          category_id,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        await supabase.storage
+          .from("product-images")
+          .remove(uploadedFileNames);
+        setFormError(result.error || "Error creando producto.");
+        setSubmitting(false);
+        return;
+      }
+
+      toast({
+        title: "Producto creado",
+        description: `El producto "${title}" fue creado correctamente.`,
+      });
+
+      setSubmitting(false);
+      formRef.current.reset();
+      setVariants([]);
+      setFiles([]);
+      // Revocar todos los objectURLs
+      setPreviewUrls((prev) => {
+        prev.forEach((url) => URL.revokeObjectURL(url));
+        return [];
+      });
+    },
+    [variants, files, supabase, toast]
+  );
+
+  // Cargar categorías (si quisieras optimizar más, esto podría venir del server)
   useEffect(() => {
     supabase
       .from("categories")
       .select("*")
-      .then(({ data }) => data && setCategories(data));
-  }, []);
+      .then(({ data, error }) => {
+        if (!error && data) setCategories(data);
+      });
+  }, [supabase]);
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-lg mx-auto">
-
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 max-w-lg mx-auto"
+    >
       {/* TÍTULO */}
       <label>
         <span className="text-sm font-medium">Título</span>
@@ -201,23 +259,32 @@ export default function NewProductForm() {
       {/* PRECIO */}
       <label>
         <span className="text-sm font-medium">Precio</span>
-        <Input type="number" name="price" step="0.01" min="0" required className="mt-1" />
+        <Input
+          type="number"
+          name="price"
+          step="0.01"
+          min="0"
+          required
+          className="mt-1"
+        />
       </label>
 
-      {/* 🔹 Tipo de producto */}
+      {/* TIPO PRODUCTO */}
       <label>
         <span className="text-sm font-medium">Tipo de producto</span>
         <select
           className="mt-1 w-full border rounded px-3 py-2"
           value={productType}
-          onChange={(e) => setProductType(e.target.value as "ropa" | "calzado")}
+          onChange={(e) =>
+            setProductType(e.target.value as "ropa" | "calzado")
+          }
         >
           <option value="ropa">Ropa</option>
           <option value="calzado">Calzado</option>
         </select>
       </label>
 
-      {/* 🔹 Variantes */}
+      {/* VARIANTES */}
       <div className="border rounded p-3 space-y-2">
         <p className="text-sm font-medium">Variantes (color, talle, stock)</p>
 
@@ -251,7 +318,6 @@ export default function NewProductForm() {
           Agregar variante
         </Button>
 
-
         {variants.length > 0 && (
           <ul className="mt-2 space-y-1 text-sm">
             {variants.map((v, i) => (
@@ -275,7 +341,11 @@ export default function NewProductForm() {
       {/* CATEGORÍA */}
       <label>
         <span className="text-sm font-medium">Categoría</span>
-        <select name="category_id" required className="mt-1 w-full border rounded px-3 py-2">
+        <select
+          name="category_id"
+          required
+          className="mt-1 w-full border rounded px-3 py-2"
+        >
           <option value="">Selecciona una categoría</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
@@ -284,6 +354,7 @@ export default function NewProductForm() {
           ))}
         </select>
       </label>
+
       {formError && (
         <Alert variant="destructive">
           <AlertTitle>Error</AlertTitle>
@@ -293,7 +364,9 @@ export default function NewProductForm() {
 
       {/* IMÁGENES */}
       <label>
-        <span className="text-sm font-medium">Imágenes (máx {MAX_FILES})</span>
+        <span className="text-sm font-medium">
+          Imágenes (máx {MAX_FILES})
+        </span>
         <Input
           type="file"
           accept="image/*"
@@ -310,7 +383,9 @@ export default function NewProductForm() {
             }
 
             setFiles(updated);
-            const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+            const newPreviews = newFiles.map((file) =>
+              URL.createObjectURL(file)
+            );
             setPreviewUrls((prev) => [...prev, ...newPreviews]);
           }}
         />
@@ -320,14 +395,14 @@ export default function NewProductForm() {
         <div className="grid grid-cols-2 gap-3 mt-2">
           {previewUrls.map((url, idx) => (
             <div key={idx} className="relative">
-              <img src={url} className="w-full h-40 object-cover rounded border" />
+              <img
+                src={url}
+                className="w-full h-40 object-cover rounded border"
+              />
 
               <button
                 type="button"
-                onClick={() => {
-                  setFiles((prev) => prev.filter((_, i) => i !== idx));
-                  setPreviewUrls((prev) => prev.filter((_, i) => i !== idx));
-                }}
+                onClick={() => handleRemoveVariant(idx)}
                 className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center"
               >
                 <X className="w-3 h-3" />

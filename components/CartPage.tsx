@@ -6,6 +6,7 @@ import Image from "next/image";
 import {
   Minus,
   Plus,
+  ShoppingBag,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ interface CartItem {
   price: number;
   originalPrice?: number;
   size?: string;
+  product_id: string;
   color?: string;
   quantity: number;
 }
@@ -236,24 +238,29 @@ export default function CartPage({ user }: CartPageProps) {
       const supabase = createClient();
 
       for (const item of items) {
-        const { data: variant } = await supabase
-          .from("product_variants")
-          .select("stock")
-          .eq("product_id", item.product_id)
-          .eq("size", item.size)
-          .eq("color", item.color)
+        const { data: product } = await supabase
+          .from("products")
+          .select("variants")
+          .eq("id", item.product_id)
           .single();
+
+        if (!product?.variants) continue;
+
+        const variant = product.variants.find(
+          (v: any) =>
+            v.size?.toLowerCase() === item.size?.toLowerCase() &&
+            v.color?.toLowerCase() === item.color?.toLowerCase()
+        );
 
         const available = variant?.stock ?? 0;
 
         if (available < item.quantity) {
           removeFromCart(item.id);
-          alert(
-            `El producto "${item.name}" ya no tiene stock suficiente y fue eliminado del carrito.`
-          );
+          alert(`El producto "${item.name}" no tiene stock suficiente.`);
           setLoading(false);
           return;
         }
+
       }
 
       // ===========================
@@ -510,15 +517,29 @@ export default function CartPage({ user }: CartPageProps) {
 ===================================== */
 function EmptyCart() {
   return (
-    <div className="container mx-auto max-w-7xl py-12 px-4 text-center">
-      <h2 className="text-2xl text-beige-800 mb-4">Tu carrito está vacío</h2>
+    <div className="container mx-auto max-w-2xl py-16 px-4">
+      <div className="flex flex-col items-center justify-center text-center">
+        {/* Icon Container */}
+        <div className="mb-6 rounded-full bg-beige-100 p-8">
+          <ShoppingBag className="h-16 w-16 text-beige-400" strokeWidth={1.5} />
+        </div>
 
-      <Button
-        asChild
-        className="bg-beige-700 hover:bg-beige-800 text-white px-8 py-6 text-lg rounded-xl"
-      >
-        <Link href="/tienda">Explorar productos</Link>
-      </Button>
+        {/* Heading */}
+        <h2 className="font-serif text-3xl md:text-4xl text-beige-800 mb-3 text-balance">Tu carrito está vacío</h2>
+
+        {/* Description */}
+        <p className="text-beige-600 text-base md:text-lg mb-8 max-w-md text-pretty">
+          Descubre nuestra colección de productos y encuentra algo especial para ti
+        </p>
+
+        {/* CTA Button */}
+        <Button
+          asChild
+          className="bg-beige-700 hover:bg-beige-800 text-white px-8 py-6 text-lg rounded-xl shadow-sm hover:shadow-md transition-all"
+        >
+          <Link href="/tienda">Explorar productos</Link>
+        </Button>
+      </div>
     </div>
-  );
+  )
 }
