@@ -1,115 +1,117 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { ProductCard } from "@/components/ProductCard"
-import { Loader2 } from "lucide-react"
-import TitleUsable from "@/components/Title"
-import { createClient } from "@/utils/supabase/client"
-import { useState } from "react"
-import { useCartStore } from "@/app/store/cartStore"
+import EmptyState from "@/app/tienda/EmptyState";
+import FilterBadge from "@/app/tienda/FilterBadge";
+import { Button } from "@/components/ui/button";
 
-interface ProductGridProps {
-  getCategoryNameById?: (id: string) => string
-  title?: string
-  limit?: number
-}
+import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
+import { ProductCard } from "./ProductCard";
 
-export function ProductGrid({ title = "Productos", limit }: ProductGridProps) {
-  const { products, isLoadingProducts, error, fetchProducts } = useCartStore()
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true)
-
-  useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
-
-  // Fetch categories from Supabase
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        setIsLoadingCategories(true)
-        const supabase = createClient()
-        const { data, error } = await supabase.from("categories").select("id, name")
-
-        if (error) {
-          console.error("Error fetching categories:", error)
-          return
-        }
-
-        setCategories(data || [])
-      } catch (err) {
-        console.error("Error in fetchCategories:", err)
-      } finally {
-        setIsLoadingCategories(false)
-      }
-    }
-
-    fetchCategories()
-  }, [])
-
-  // Helper function to get category name by ID
-  function getCategoryNameById(id: string) {
-    const category = categories.find((cat) => cat.id === id)
-    return category ? category.name : "Categoría desconocida"
-  }
-
-  // Limit the number of products if specified
-  const displayProducts = limit ? products.slice(0, limit) : products
-
-  if (isLoadingProducts || isLoadingCategories) {
-    return (
-      <section className="py-16 px-4 md:px-6 bg-beige-50">
-        <div className="container mx-auto">
-          <div className="mb-12 text-center">
-            <TitleUsable title={title} />
-            <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-beige-500 to-transparent mx-auto mt-4"></div>
-          </div>
-
-          <div className="flex justify-center items-center py-12">
-            <Loader2 className="w-10 h-10 text-beige-500 animate-spin" />
-          </div>
-        </div>
-      </section>
-    )
-  }
-
-  if (error) {
-    return (
-      <section className="py-16 px-4 md:px-6 bg-beige-50">
-        <div className="container mx-auto text-center">
-          <TitleUsable title={title} />
-          <p className="text-beige-600 mt-4">{error}</p>
-        </div>
-      </section>
-    )
-  }
-
-  if (!products || products.length === 0) {
-    return (
-      <section className="py-16 px-4 md:px-6 bg-beige-50">
-        <div className="container mx-auto text-center">
-          <TitleUsable title={title} />
-          <p className="text-beige-600 mt-4">No hay productos disponibles en este momento.</p>
-        </div>
-      </section>
-    )
+export default function ProductGrid({
+  products,
+  totalPages,
+  currentPage,
+  setCurrentPage,
+  categories,
+  selectedCategories,
+  searchQuery,
+  clearFilters,
+  toggleCategory,
+  sortOption,
+  setSortOption,
+}: any) {
+  const getCategoryNameById = (id: string): string => {
+    const found = categories.find((c: any) => c.id === id)
+    return found?.name ?? "Sin categoría"
   }
 
   return (
-    <section className="py-16 px-4 md:px-6 bg-beige-50">
-      <div className="container mx-auto">
-        <div className="mb-12 text-center">
-          <TitleUsable title={title} />
-          <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-beige-500 to-transparent mx-auto mt-4"></div>
-        </div>
+    <div className="flex-1">
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-6 max-w-7xl mx-auto">
-          {displayProducts.map((product) => (
-            <ProductCard key={product.id} product={product} getCategoryNameById={getCategoryNameById} />
-          ))}
+      {/* Active filters */}
+      {(selectedCategories.length > 0 || searchQuery) && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {selectedCategories.map((id: any) => {
+            const cat = categories.find((c: any) => c.id === id);
+            return (
+              <FilterBadge
+                key={id}
+                label={cat?.name || "Categoría"}
+                onRemove={() => toggleCategory(id)}
+              />
+            );
+          })}
+
+          {searchQuery && (
+            <FilterBadge
+              label={`Buscar: ${searchQuery}`}
+              onRemove={clearFilters}
+            />
+          )}
         </div>
+      )}
+
+      {/* Sort */}
+      <div className="flex justify-start mb-4">
+        <Select value={sortOption} onValueChange={(v) => setSortOption(v)}>
+          <SelectTrigger className="w-[200px] bg-white">
+            Ordenar por
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Más recientes</SelectItem>
+            <SelectItem value="price-asc">Precio menor</SelectItem>
+            <SelectItem value="price-desc">Precio mayor</SelectItem>
+            <SelectItem value="name-asc">Nombre A-Z</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-    </section>
-  )
-}
 
+      {/* Grid */}
+      {products.length === 0 ? (
+        <EmptyState clearFilters={clearFilters} />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map((p: any) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                getCategoryNameById={getCategoryNameById}
+              />
+
+            ))}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex justify-center gap-2 mt-10 flex-wrap">
+            <Button
+              variant="outline"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+            >
+              Anterior
+            </Button>
+
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <Button
+                key={i}
+                variant={currentPage === i + 1 ? "default" : "outline"}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </Button>
+            ))}
+
+            <Button
+              variant="outline"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+            >
+              Siguiente
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 
 export default function Footer() {
   return (
-    <footer className="bg-beige-100 border-t h-screen border-beige-200">
+    <footer className="bg-beige-100 border-t h-full border-beige-200">
       {/* Wave decoration at top */}
       <div className="relative h-12 overflow-hidden">
         <svg

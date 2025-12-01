@@ -165,7 +165,9 @@ export default async function RootLayout({
 
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <Navbar user={user} isAdmin={isAdmin} />
-          <main >{children}</main>
+          <main
+            className="flex-1 flex flex-col w-full min-h-screen bg-beige-50"
+          >{children}</main>
           <Footer />
         </ThemeProvider>
       </body>
