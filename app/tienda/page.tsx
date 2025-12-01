@@ -4,8 +4,10 @@ import { Suspense } from "react";
 
 function TiendaSkeleton() {
   return (
-    <div className="w-full py-20 flex justify-center">
-      <div className="animate-spin h-10 w-10 rounded-full border-4 border-beige-400 border-t-transparent"></div>
+    <div className="w-full py-20 flex justify-center items-center 
+      
+    ">
+      <div className="animate-spin h-14 w-14 rounded-full border-4 border-beige-400 border-t-transparent"></div>
     </div>
   );
 }
