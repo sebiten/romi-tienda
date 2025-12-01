@@ -5,7 +5,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import type { Order } from "@/lib/types"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-import { Package, User, Phone, Calendar, ShoppingBag, Trash2, Eye, ChevronLeft, ChevronRight } from "lucide-react"
+import { Package, User, Phone, Calendar, ShoppingBag, Eye, ChevronLeft, ChevronRight } from "lucide-react"
+import { DeleteOrderButton } from "./deleteOrderButton"
 
 // SERVER ACTION: ELIMINAR PEDIDO
 async function deleteOrderAction(orderId: string) {
@@ -56,7 +57,7 @@ export default async function PedidosPage({
 
   const params = await searchParams
   const currentPage = Math.max(1, Number(params.page) || 1)
-  const ordersPerPage = 3
+  const ordersPerPage = 10
   const from = (currentPage - 1) * ordersPerPage
   const to = from + ordersPerPage - 1
 
@@ -277,22 +278,9 @@ export default async function PedidosPage({
                           </Link>
                         </Button>
 
-                        <form
-                          action={async () => {
-                            "use server"
-                            await deleteOrderAction(order.id)
-                          }}
-                          className="flex-1 sm:flex-initial"
-                        >
-                          <Button
-                            type="submit"
-                            variant="destructive"
-                            className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Eliminar
-                          </Button>
-                        </form>
+                        <div className="flex-1 sm:flex-initial">
+                          <DeleteOrderButton orderId={order.id} deleteAction={deleteOrderAction} />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
