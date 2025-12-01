@@ -1,6 +1,14 @@
 import { createClient } from "@/lib/server";
-import ProductsClient from "./ProductsClient";
+import ProductsWrapper from "./ProductsWrapper";
 import { Suspense } from "react";
+
+function TiendaSkeleton() {
+  return (
+    <div className="w-full py-20 flex justify-center">
+      <div className="animate-spin h-10 w-10 rounded-full border-4 border-beige-400 border-t-transparent"></div>
+    </div>
+  );
+}
 
 export default async function TiendaPage() {
   const supabase = await createClient();
@@ -15,10 +23,11 @@ export default async function TiendaPage() {
     .select("id, name");
 
   return (
-    <ProductsClient
-      products={products || []}
-      categories={categories || []}
-    />
-
+    <Suspense fallback={<TiendaSkeleton />}>
+      <ProductsWrapper
+        products={products || []}
+        categories={categories || []}
+      />
+    </Suspense>
   );
 }
