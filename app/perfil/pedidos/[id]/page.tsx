@@ -5,6 +5,20 @@ import { ArrowLeft } from "lucide-react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Order } from "@/lib/types";
 
+// ==================== MAP DE ESTADOS ====================
+function mapOrderStatus(status: string) {
+  const map: Record<string, string> = {
+    pending: "Pendiente",
+    preparing: "Preparando",
+    shipped: "En camino",
+    ready_for_pickup: "Listo para retirar",
+    completed: "Completado",
+    cancelled: "Cancelado",
+  };
+
+  return map[status] ?? status;
+}
+
 export default async function PedidoDetallePage(props: {
   params: Promise<{ id: string }>;
 }) {
@@ -18,7 +32,7 @@ export default async function PedidoDetallePage(props: {
 
   if (!user) redirect("/login");
 
-  // === 2) GET ORDER WITH ITEMS + PRODUCTS ===
+  // === 2) GET ORDER ===
   const { data: order, error } = (await supabase
     .from("orders")
     .select(
@@ -29,10 +43,10 @@ export default async function PedidoDetallePage(props: {
         product:product_id (*)
       ),
       profiles:user_id (*)
-    `
+    `,
     )
     .eq("id", params.id)
-    .eq("user_id", user.id) // seguridad: sólo pedidos del usuario
+    .eq("user_id", user.id)
     .single()) as { data: Order | null; error: any };
 
   if (!order || error) return notFound();
@@ -65,7 +79,7 @@ export default async function PedidoDetallePage(props: {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* ==================== IZQUIERDA: ITEMS ==================== */}
+          {/* ==================== ITEMS ==================== */}
           <div className="md:col-span-2">
             <Card className="bg-white border-beige-200 shadow-sm">
               <CardHeader>
@@ -80,13 +94,11 @@ export default async function PedidoDetallePage(props: {
                     key={item.id}
                     className="flex items-center gap-4 border-b pb-4"
                   >
-                    {/* IMG */}
                     <img
                       src={item.product?.images?.[0] || "/placeholder.svg"}
                       className="w-16 h-16 rounded-md object-cover bg-beige-100"
                     />
 
-                    {/* INFO */}
                     <div className="flex-1">
                       <p className="font-medium text-beige-800">
                         {item.product?.title}
@@ -109,59 +121,47 @@ export default async function PedidoDetallePage(props: {
                       )}
                     </div>
 
-                    {/* PRICE */}
                     <p className="font-medium text-beige-800">
                       ${item.unit_price}
                     </p>
                   </div>
                 ))}
 
-                {/* Totales */}
-                <div className="border-t pt-4 space-y-2">
-                  <div className="flex justify-between text-beige-700">
+                {/* Totals */}
+                <div className="border-t pt-4 space-y-2 text-beige-700">
+                  <div className="flex justify-between">
                     <p>Subtotal</p>
                     <p>${order.total}</p>
                   </div>
 
-                  {order.shipping_cost && (
-                    <div className="flex justify-between text-beige-700">
-                      <p>Envío</p>
-                      <p>${order.shipping_cost}</p>
-                    </div>
-                  )}
+                  <div className="flex justify-between">
+                    <p>Envío</p>
+                    <p>${order.shipping_amount ?? 0}</p>
+                  </div>
 
                   <div className="flex justify-between font-bold text-beige-900 text-lg">
                     <p>Total</p>
-                    <p>${order.total! + (order.shipping_cost || 0)}</p>
+                    <p>${order.total! + (order.shipping_amount ?? 0)}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* ==================== DERECHA: INFO CLIENTE ==================== */}
+          {/* ==================== RIGHT SIDEBAR ==================== */}
           <div className="space-y-6">
-            {/* ESTADO DE PAGO */}
+            {/* ESTADO DEL PEDIDO */}
             <Card className="bg-white border-beige-200 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-beige-800">
-                  Estado del Pago
+                  Estado del Pedido
                 </CardTitle>
               </CardHeader>
 
               <CardContent>
-                <p className="text-beige-700">
-                  Estado:{" "}
-                  <span className="font-semibold text-beige-900">
-                    {mapStatus(order.status)}
-                  </span>
+                <p className="font-semibold text-beige-900">
+                  {mapOrderStatus(order.order_status || "pending")}
                 </p>
-
-                {order.mp_payment_id && (
-                  <p className="text-sm text-beige-600 mt-1">
-                    ID de Mercado Pago: {order.mp_payment_id}
-                  </p>
-                )}
               </CardContent>
             </Card>
 
@@ -174,12 +174,24 @@ export default async function PedidoDetallePage(props: {
               </CardHeader>
 
               <CardContent className="space-y-1 text-beige-700">
-                <p><b>Nombre:</b> {order.shipping_name}</p>
-                <p><b>Teléfono:</b> {order.shipping_phone}</p>
-                <p><b>Dirección:</b> {order.shipping_address}</p>
-                <p><b>Ciudad:</b> {order.shipping_city}</p>
-                <p><b>Provincia:</b> {order.shipping_province}</p>
-                <p><b>CP:</b> {order.shipping_cp}</p>
+                <p>
+                  <b>Nombre:</b> {order.shipping_name}
+                </p>
+                <p>
+                  <b>Teléfono:</b> {order.shipping_phone}
+                </p>
+                <p>
+                  <b>Dirección:</b> {order.shipping_address}
+                </p>
+                <p>
+                  <b>Ciudad:</b> {order.shipping_city}
+                </p>
+                <p>
+                  <b>Provincia:</b> {order.shipping_province}
+                </p>
+                <p>
+                  <b>CP:</b> {order.shipping_cp}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -187,14 +199,4 @@ export default async function PedidoDetallePage(props: {
       </div>
     </main>
   );
-}
-
-/* ========= HELPERS ========= */
-function mapStatus(status: string) {
-  const map: Record<string, string> = {
-    pending: "Pendiente",
-    paid: "Pagado",
-    cancelled: "Cancelado",
-  };
-  return map[status] || status;
 }

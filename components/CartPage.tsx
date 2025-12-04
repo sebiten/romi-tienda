@@ -3,18 +3,9 @@
 import { useEffect, useState, useCallback, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Minus,
-  Plus,
-  ShoppingBag,
-  Trash2,
-} from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import type { User } from "@supabase/supabase-js";
@@ -137,7 +128,7 @@ const CartItemRow = memo(
         </div>
       </div>
     </li>
-  )
+  ),
 );
 
 CartItemRow.displayName = "CartItemRow";
@@ -182,7 +173,7 @@ export default function CartPage({ user }: CartPageProps) {
         const variant = product.variants?.find(
           (v: any) =>
             v.color?.toLowerCase() === item.color?.toLowerCase() &&
-            v.size === item.size
+            v.size === item.size,
         );
 
         const stock = variant?.stock ?? 0;
@@ -195,7 +186,7 @@ export default function CartPage({ user }: CartPageProps) {
 
       if (removedSomething) {
         toast.error(
-          "Algunos productos fueron eliminados del carrito por falta de stock."
+          "Algunos productos fueron eliminados del carrito por falta de stock.",
         );
       }
     };
@@ -249,7 +240,7 @@ export default function CartPage({ user }: CartPageProps) {
         const variant = product.variants.find(
           (v: any) =>
             v.size?.toLowerCase() === item.size?.toLowerCase() &&
-            v.color?.toLowerCase() === item.color?.toLowerCase()
+            v.color?.toLowerCase() === item.color?.toLowerCase(),
         );
 
         const available = variant?.stock ?? 0;
@@ -260,7 +251,6 @@ export default function CartPage({ user }: CartPageProps) {
           setLoading(false);
           return;
         }
-
       }
 
       // ===========================
@@ -296,17 +286,44 @@ export default function CartPage({ user }: CartPageProps) {
       }
 
       window.location.href = data.init_point;
-
     } catch (error) {
       console.error("Error en checkout MP:", error);
     } finally {
       setLoading(false);
     }
   }, [user, items, shippingData, router]);
+  // Calcular envío al cambiar código postal
+  useEffect(() => {
+    const fetchShipping = async () => {
+      if (shippingData.cp.length < 3) return;
+
+      try {
+        const res = await fetch("/api/shipping/calculate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cp: shippingData.cp }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          useCartStore.setState({ shipping: data.cost });
+          setShippingData((prev) => ({
+            ...prev,
+            province: data.province,
+          }));
+        }
+      } catch (err) {
+        console.error("Error obteniendo envío:", err);
+      }
+    };
+
+    fetchShipping();
+  }, [shippingData.cp]);
 
   useEffect(() => {
     calculateTotals();
-  }, [items, calculateTotals]);
+  }, [items, shipping, discount, calculateTotals]);
 
   if (items.length === 0) return <EmptyCart />;
 
@@ -324,7 +341,9 @@ export default function CartPage({ user }: CartPageProps) {
             <ul className="space-y-1">
               <li>1️⃣ Revisá tus productos aquí abajo.</li>
               <li>2️⃣ Completá tu dirección de envío.</li>
-              <li>3️⃣ Tocá <strong>“Pagar con Mercado Pago”</strong>.</li>
+              <li>
+                3️⃣ Tocá <strong>“Pagar con Mercado Pago”</strong>.
+              </li>
             </ul>
           </div>
         </div>
@@ -371,7 +390,10 @@ export default function CartPage({ user }: CartPageProps) {
                     className="bg-beige-50"
                     value={shippingData.phone}
                     onChange={(e) =>
-                      setShippingData({ ...shippingData, phone: e.target.value })
+                      setShippingData({
+                        ...shippingData,
+                        phone: e.target.value,
+                      })
                     }
                   />
                   <Input
@@ -418,6 +440,17 @@ export default function CartPage({ user }: CartPageProps) {
 
                 {/* TOTALES */}
                 <div className="text-beige-800 space-y-2">
+                  {shippingData.cp.length >= 3 && (
+                    <p className="text-sm mt-2 p-2 bg-blue-50 text-blue-900 border border-blue-200 rounded-lg">
+                      Región detectada:{" "}
+                      <strong>
+                        {shippingData.province || "Detectando..."}
+                      </strong>{" "}
+                      — Envío{" "}
+                      <strong>${shipping.toLocaleString("es-AR")}</strong>
+                    </p>
+                  )}
+
                   <div className="flex justify-between">
                     <span>Subtotal</span>
                     <span>${subtotal.toLocaleString("es-AR")}</span>
@@ -476,12 +509,14 @@ export default function CartPage({ user }: CartPageProps) {
                     )}
                   </Button>
                 ) : (
-                  <Button className="bg-beige-700 text-white w-full py-4 text-lg rounded-xl" asChild>
+                  <Button
+                    className="bg-beige-700 text-white w-full py-4 text-lg rounded-xl"
+                    asChild
+                  >
                     <Link href="/login">Iniciar Sesión</Link>
                   </Button>
                 )}
               </CardFooter>
-
             </Card>
           </div>
         </div>
@@ -525,11 +560,14 @@ function EmptyCart() {
         </div>
 
         {/* Heading */}
-        <h2 className="font-serif text-3xl md:text-4xl text-beige-800 mb-3 text-balance">Tu carrito está vacío</h2>
+        <h2 className="font-serif text-3xl md:text-4xl text-beige-800 mb-3 text-balance">
+          Tu carrito está vacío
+        </h2>
 
         {/* Description */}
         <p className="text-beige-600 text-base md:text-lg mb-8 max-w-md text-pretty">
-          Descubre nuestra colección de productos y encuentra algo especial para ti
+          Descubre nuestra colección de productos y encuentra algo especial para
+          ti
         </p>
 
         {/* CTA Button */}
@@ -541,5 +579,5 @@ function EmptyCart() {
         </Button>
       </div>
     </div>
-  )
+  );
 }

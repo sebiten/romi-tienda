@@ -1,30 +1,35 @@
-import { create } from "zustand"
-import { persist } from "zustand/middleware"
-import { createClient } from "@/utils/supabase/client"
-import type { CartItem, Product } from "@/lib/types"
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { createClient } from "@/utils/supabase/client";
+import type { CartItem, Product } from "@/lib/types";
 
 interface CartState {
-  items: CartItem[]
-  isLoading: boolean
-  error: string | null
+  items: CartItem[];
+  isLoading: boolean;
+  error: string | null;
 
   // Totals
-  subtotal: number
-  shipping: number
-  discount: number
-  total: number
+  subtotal: number;
+  shipping: number;
+  discount: number;
+  total: number;
 
   // Products
-  products: Product[]
-  isLoadingProducts: boolean
+  products: Product[];
+  isLoadingProducts: boolean;
 
   // Actions
-  fetchProducts: () => Promise<void>
-  addToCart: (product: Product, size: string, color: string, variantStock: number) => void
-  removeFromCart: (itemId: string) => void
-  updateQuantity: (itemId: string, quantity: number) => void
-  clearCart: () => void
-  calculateTotals: () => void
+  fetchProducts: () => Promise<void>;
+  addToCart: (
+    product: Product,
+    size: string,
+    color: string,
+    variantStock: number,
+  ) => void;
+  removeFromCart: (itemId: string) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
+  clearCart: () => void;
+  calculateTotals: () => void;
 }
 
 export const useCartStore = create<CartState>()(
@@ -43,44 +48,49 @@ export const useCartStore = create<CartState>()(
       // Fetch products
       fetchProducts: async () => {
         try {
-          set({ isLoadingProducts: true, error: null })
+          set({ isLoadingProducts: true, error: null });
 
-          const supabase = createClient()
+          const supabase = createClient();
           const { data: products, error: productsError } = await supabase
             .from("products")
             .select("*")
-            .order("created_at", { ascending: false })
+            .order("created_at", { ascending: false });
 
-          if (productsError) throw new Error(productsError.message)
+          if (productsError) throw new Error(productsError.message);
 
-          set({ products: products || [], isLoadingProducts: false })
+          set({ products: products || [], isLoadingProducts: false });
         } catch (error) {
-          console.error("Error fetching products:", error)
+          console.error("Error fetching products:", error);
           set({
-            error: error instanceof Error ? error.message : "Error fetching products",
+            error:
+              error instanceof Error
+                ? error.message
+                : "Error fetching products",
             isLoadingProducts: false,
-          })
+          });
         }
       },
 
       // 🛒 Add to cart WITH VARIANTS
       addToCart: (product, size, color, variantStock) => {
-        const { items } = get()
+        const { items } = get();
 
         const existingItemIndex = items.findIndex(
           (item) =>
-            item.product_id === product.id && item.size === size && item.color === color
-        )
+            item.product_id === product.id &&
+            item.size === size &&
+            item.color === color,
+        );
 
         if (existingItemIndex > -1) {
-          const updatedItems = [...items]
-          const item = updatedItems[existingItemIndex]
+          const updatedItems = [...items];
+          const item = updatedItems[existingItemIndex];
 
           // No permitir pasar stock
-          if (item.quantity >= variantStock) return
+          if (item.quantity >= variantStock) return;
 
-          updatedItems[existingItemIndex].quantity += 1
-          set({ items: updatedItems })
+          updatedItems[existingItemIndex].quantity += 1;
+          set({ items: updatedItems });
         } else {
           const newItem: CartItem = {
             id: `${product.id}_${size}_${color}_${Date.now()}`,
@@ -93,82 +103,89 @@ export const useCartStore = create<CartState>()(
             color,
             product_id: product.id,
             variantStock,
-          }
+          };
 
-          set({ items: [...items, newItem] })
+          set({ items: [...items, newItem] });
         }
 
-        get().calculateTotals()
+        get().calculateTotals();
       },
 
       // Remove item
       removeFromCart: (itemId) => {
-        const updatedItems = get().items.filter((item) => item.id !== itemId)
-        set({ items: updatedItems })
-        get().calculateTotals()
+        const updatedItems = get().items.filter((item) => item.id !== itemId);
+        set({ items: updatedItems });
+        get().calculateTotals();
       },
 
       // Update quantity WITH STOCK LIMITS
       updateQuantity: (itemId, quantity) => {
-        const { items } = get()
+        const { items } = get();
 
         const updatedItems = items
           .map((item) => {
             if (item.id === itemId) {
               // Eliminamos si ponen 0
-              if (quantity < 1) return null
+              if (quantity < 1) return null;
 
               // No dejar pasar stock
-              const max = item.variantStock ?? item.quantity
-              const safeQty = Math.min(quantity, max)
+              const max = item.variantStock ?? item.quantity;
+              const safeQty = Math.min(quantity, max);
 
-              return { ...item, quantity: safeQty }
+              return { ...item, quantity: safeQty };
             }
-            return item
+            return item;
           })
-          .filter(Boolean) as CartItem[]
+          .filter(Boolean) as CartItem[];
 
-        set({ items: updatedItems })
-        get().calculateTotals()
+        set({ items: updatedItems });
+        get().calculateTotals();
       },
 
       clearCart: () => {
-        set({ items: [] })
-        get().calculateTotals()
+        set({ items: [] });
+        get().calculateTotals();
       },
       calculateTotals: () => {
-        const { items } = get();
+        const { items, shipping } = get();
 
-        // Cantidad total de unidades en el carrito
-        const totalUnits = items.reduce((total, item) => total + item.quantity, 0);
-
-        // Subtotal normal
-        const subtotal = items.reduce(
-          (total, item) => total + item.price * item.quantity,
-          0
+        // Cantidad total de unidades
+        const totalUnits = items.reduce(
+          (total, item) => total + item.quantity,
+          0,
         );
 
-        // Descuento automático por volumen (10% si hay 6+ prendas)
+        // Subtotal
+        const subtotal = items.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0,
+        );
+
+        // Descuento por volumen
         let discount = 0;
         if (totalUnits >= 6) {
-          discount = subtotal * 0.10;
+          discount = subtotal * 0.1;
         }
 
-        // Costo de envío: $2500 fijo, o gratis si supera $200000
-        const shipping = subtotal > 80000 ? 0 : 100;
+        // ⚠️ SHIPPING YA NO SE CALCULA ACÁ
+        // Usamos el shipping REAL que viene del backend
 
-        // Total final
         const total = subtotal - discount + shipping;
 
-        set({ subtotal, discount, shipping, total });
+        set({ subtotal, discount, total });
       },
 
+      // Nuevo: actualizar shipping desde el checkout
+      setShipping: (amount: number) => {
+        set({ shipping: amount });
+        get().calculateTotals();
+      },
     }),
     {
       name: "alma-lucia-cart",
       partialize: (state) => ({
         items: state.items,
       }),
-    }
-  )
-)
+    },
+  ),
+);

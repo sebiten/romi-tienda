@@ -95,7 +95,7 @@ export type Order = {
   id: string;
   user_id: string;
   created_at: string;
-
+  order_status: string;
   // Estado del pedido
   status: string; // "pending", "paid", "cancelled", etc.
   discount?: number | null;
@@ -122,9 +122,9 @@ export type Order = {
   mp_preference_id?: string | null;
   mp_payment_id?: string | null;
 
-  payment_status?: string | null;          // approved, rejected, pending
-  payment_status_detail?: string | null;   // detalle técnico
-  payment_raw?: any;                       // JSON crudo del pago MP
+  payment_status?: string | null; // approved, rejected, pending
+  payment_status_detail?: string | null; // detalle técnico
+  payment_raw?: any; // JSON crudo del pago MP
 
   // Relaciones
   profiles?: Profile;

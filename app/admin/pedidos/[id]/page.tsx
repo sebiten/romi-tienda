@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { Order } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { markOrderAsPaidAction } from "../../actions";
+import { updateOrderStatusAction } from "@/app/actions";
 
 // Traducción visual de estados
 function getStatusBadge(status: string) {
@@ -19,6 +20,29 @@ function getStatusBadge(status: string) {
       className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${map[status as keyof typeof map]?.class}`}
     >
       {map[status as keyof typeof map]?.label || status}
+    </span>
+  );
+}
+function getOrderStatusBadge(status: string) {
+  const map = {
+    pending: { label: "Pendiente", class: "bg-gray-100 text-gray-700" },
+    preparing: { label: "Preparando", class: "bg-yellow-100 text-yellow-800" },
+    shipped: { label: "En camino", class: "bg-blue-100 text-blue-800" },
+    ready_for_pickup: {
+      label: "Listo para retirar",
+      class: "bg-purple-100 text-purple-800",
+    },
+    completed: { label: "Completado", class: "bg-green-100 text-green-800" },
+    cancelled: { label: "Cancelado", class: "bg-red-100 text-red-800" },
+  };
+
+  const config = map[status as keyof typeof map] || map.pending;
+
+  return (
+    <span
+      className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${config.class}`}
+    >
+      {config.label}
     </span>
   );
 }
@@ -52,7 +76,7 @@ export default async function OrderDetailPage(props: {
         *,
         product:product_id(*)
       )
-    `
+    `,
     )
     .eq("id", params.id)
     .single()) as { data: Order | null };
@@ -74,7 +98,10 @@ export default async function OrderDetailPage(props: {
           Pedido #{order.id.slice(-6)}
         </h1>
 
-        <div className="mb-4">{getStatusBadge(order.status)}</div>
+        <div className="mb-4 flex gap-2">
+          {getStatusBadge(order.status)}
+          {getOrderStatusBadge(order.order_status)}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Items */}
@@ -99,7 +126,8 @@ export default async function OrderDetailPage(props: {
                     <div className="flex-1">
                       <p className="font-medium">{item.product?.title}</p>
                       <p className="text-sm text-beige-600">
-                        {item.quantity}x — {item.size} {item.color && `(${item.color})`}
+                        {item.quantity}x — {item.size}{" "}
+                        {item.color && `(${item.color})`}
                       </p>
                     </div>
 
@@ -138,12 +166,24 @@ export default async function OrderDetailPage(props: {
                 <CardTitle>Envío</CardTitle>
               </CardHeader>
               <CardContent className="text-sm space-y-1">
-                <p><b>Nombre:</b> {order.shipping_name}</p>
-                <p><b>Teléfono:</b> {order.shipping_phone}</p>
-                <p><b>Dirección:</b> {order.shipping_address}</p>
-                <p><b>Ciudad:</b> {order.shipping_city}</p>
-                <p><b>Provincia:</b> {order.shipping_province}</p>
-                <p><b>CP:</b> {order.shipping_cp}</p>
+                <p>
+                  <b>Nombre:</b> {order.shipping_name}
+                </p>
+                <p>
+                  <b>Teléfono:</b> {order.shipping_phone}
+                </p>
+                <p>
+                  <b>Dirección:</b> {order.shipping_address}
+                </p>
+                <p>
+                  <b>Ciudad:</b> {order.shipping_city}
+                </p>
+                <p>
+                  <b>Provincia:</b> {order.shipping_province}
+                </p>
+                <p>
+                  <b>CP:</b> {order.shipping_cp}
+                </p>
               </CardContent>
             </Card>
 
@@ -153,8 +193,12 @@ export default async function OrderDetailPage(props: {
                 <CardTitle>Pago</CardTitle>
               </CardHeader>
               <CardContent>
-                <p><b>Estado MP:</b> {order.payment_status || "pendiente"}</p>
-                <p><b>ID Pago:</b> {order.mp_payment_id}</p>
+                <p>
+                  <b>Estado MP:</b> {order.payment_status || "pendiente"}
+                </p>
+                <p>
+                  <b>ID Pago:</b> {order.mp_payment_id}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -162,7 +206,46 @@ export default async function OrderDetailPage(props: {
 
         {/* Botón marcar pagado */}
         <div className="mt-8 flex justify-end">
-          <form action={async () => { "use server"; await markOrderAsPaidAction(order.id); }}>
+          <form
+            action={async (formData) => {
+              "use server";
+              await updateOrderStatusAction(
+                order.id,
+                formData.get("order_status") as string,
+              );
+            }}
+            className="mb-6"
+          >
+            <label className="block mb-2 text-sm font-medium text-beige-700">
+              Estado del Pedido
+            </label>
+
+            <div className="flex gap-3">
+              <select
+                name="order_status"
+                defaultValue={order.order_status}
+                className="border rounded px-3 py-2"
+              >
+                <option value="pending">Pendiente</option>
+                <option value="preparing">Preparando</option>
+                <option value="shipped">En camino</option>
+                <option value="ready_for_pickup">Listo para retirar</option>
+                <option value="completed">Completado</option>
+                <option value="cancelled">Cancelado</option>
+              </select>
+
+              <Button type="submit" variant="secondary">
+                Actualizar
+              </Button>
+            </div>
+          </form>
+
+          <form
+            action={async () => {
+              "use server";
+              await markOrderAsPaidAction(order.id);
+            }}
+          >
             <Button variant="outline">Marcar como pagado</Button>
           </form>
         </div>
