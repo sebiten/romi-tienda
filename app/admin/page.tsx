@@ -1,53 +1,82 @@
-import type React from "react"
-import { createClient } from "@/utils/supabase/server"
-import { redirect } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Package, Users, ShoppingBag, CreditCard, TrendingUp, Clock, ArrowUpRight, DollarSign } from "lucide-react"
-import Link from "next/link"
+import type React from "react";
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Package,
+  Users,
+  ShoppingBag,
+  CreditCard,
+  TrendingUp,
+  Clock,
+  ArrowUpRight,
+  DollarSign,
+  PencilIcon,
+  Image,
+} from "lucide-react";
+import Link from "next/link";
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   // 1) USER
   const {
     data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect("/")
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/");
 
   // 2) ADMIN CHECK
-  const { data: profile } = await supabase.from("profiles").select("isadmin").eq("id", user.id).single()
-  if (!profile?.isadmin) redirect("/")
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("isadmin")
+    .eq("id", user.id)
+    .single();
+  if (!profile?.isadmin) redirect("/");
 
   // 3) QUERIES EN PARALELO
-  const [newPaidOrdersQuery, totalUsersQuery, totalProductsQuery, paidOrdersQuery, recentOrdersQuery] =
-    await Promise.all([
-      supabase
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "paid")
-        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
-      supabase.from("profiles").select("*", { count: "exact", head: true }),
-      supabase.from("products").select("*", { count: "exact", head: true }),
-      supabase.from("orders").select("total, created_at").eq("status", "paid"),
-      supabase
-        .from("orders")
-        .select("id, user_id, created_at, status, total, shipping_name, shipping_phone, shipping_city")
-        .order("created_at", { ascending: false })
-        .limit(5),
-    ])
+  const [
+    newPaidOrdersQuery,
+    totalUsersQuery,
+    totalProductsQuery,
+    paidOrdersQuery,
+    recentOrdersQuery,
+  ] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "paid")
+      .gte(
+        "created_at",
+        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      ),
+    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("products").select("*", { count: "exact", head: true }),
+    supabase.from("orders").select("total, created_at").eq("status", "paid"),
+    supabase
+      .from("orders")
+      .select(
+        "id, user_id, created_at, status, total, shipping_name, shipping_phone, shipping_city",
+      )
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
 
   // STATS
-  const newPaidOrders = newPaidOrdersQuery.count ?? 0
-  const totalUsers = totalUsersQuery.count ?? 0
-  const totalProducts = totalProductsQuery.count ?? 0
-  const paidOrders = paidOrdersQuery.data ?? []
-  const recentOrders = recentOrdersQuery.data ?? []
+  const newPaidOrders = newPaidOrdersQuery.count ?? 0;
+  const totalUsers = totalUsersQuery.count ?? 0;
+  const totalProducts = totalProductsQuery.count ?? 0;
+  const paidOrders = paidOrdersQuery.data ?? [];
+  const recentOrders = recentOrdersQuery.data ?? [];
 
-  const totalSales = paidOrders.reduce((acc, order) => acc + (order.total ?? 0), 0)
+  const totalSales = paidOrders.reduce(
+    (acc, order) => acc + (order.total ?? 0),
+    0,
+  );
 
   // Calculate growth (mock data - you can enhance this with real historical data)
-  const avgOrderValue = paidOrders.length > 0 ? totalSales / paidOrders.length : 0
+  const avgOrderValue =
+    paidOrders.length > 0 ? totalSales / paidOrders.length : 0;
 
   return (
     <main className="min-h-screen bg-beige-50">
@@ -58,7 +87,9 @@ export default async function AdminDashboardPage() {
             <h1 className="font-serif text-3xl md:text-4xl text-beige-900 leading-tight text-balance">
               Panel de Administración
             </h1>
-            <p className="text-beige-600 text-sm md:text-base">Resumen general de tu negocio</p>
+            <p className="text-beige-600 text-sm md:text-base">
+              Resumen general de tu negocio
+            </p>
           </div>
         </header>
 
@@ -78,7 +109,10 @@ export default async function AdminDashboardPage() {
               value={totalUsers}
               icon={<Users className="h-6 w-6 md:h-7 md:w-7" />}
               href="/admin/usuarios"
-              trend={{ value: `+${Math.floor(totalUsers * 0.12)}`, label: "este mes" }}
+              trend={{
+                value: `+${Math.floor(totalUsers * 0.12)}`,
+                label: "este mes",
+              }}
               variant="info"
             />
             <StatsCard
@@ -106,7 +140,9 @@ export default async function AdminDashboardPage() {
           <Card className="lg:col-span-2 bg-white border-beige-200 shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg md:text-xl font-serif text-beige-900">Últimos Pedidos</CardTitle>
+                <CardTitle className="text-lg md:text-xl font-serif text-beige-900">
+                  Últimos Pedidos
+                </CardTitle>
                 <Link
                   href="/admin/pedidos"
                   className="text-sm text-beige-600 hover:text-beige-900 flex items-center gap-1 transition-colors"
@@ -120,7 +156,9 @@ export default async function AdminDashboardPage() {
               {recentOrders.length === 0 ? (
                 <div className="py-12 text-center">
                   <Package className="h-12 w-12 text-beige-300 mx-auto mb-3" />
-                  <p className="text-beige-600 text-sm">No hay pedidos recientes</p>
+                  <p className="text-beige-600 text-sm">
+                    No hay pedidos recientes
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -142,11 +180,14 @@ export default async function AdminDashboardPage() {
                         </p>
                         <p className="text-xs text-beige-500 flex items-center gap-1 mt-1">
                           <Clock className="h-3 w-3" />
-                          {new Date(order.created_at).toLocaleDateString("es-AR", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
+                          {new Date(order.created_at).toLocaleDateString(
+                            "es-AR",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -161,10 +202,33 @@ export default async function AdminDashboardPage() {
               )}
             </CardContent>
           </Card>
-
+          {/* Quick Actions */}
+          <Card className="bg-white border-beige-200 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-serif text-beige-900">
+                Acciones Rápidas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <QuickActionButton
+                href="/admin/pedidos"
+                icon={<Package className="h-4 w-4" />}
+                label="Todos los Pedidos"
+              />
+              <QuickActionButton
+                href="/admin/new-product"
+                icon={<ShoppingBag className="h-4 w-4" />}
+                label="Agregar Producto"
+              />
+              <QuickActionButton
+                href="/admin/edit"
+                icon={<PencilIcon className="h-4 w-4" />}
+                label="Editar productos"
+              />
+            </CardContent>
+          </Card>
           {/* Quick Stats - Takes 1 column */}
-          <div className="space-y-6">
-            {/* Average Order Value */}
+          {/* <div className="space-y-6">
             <Card className="bg-white border-beige-200 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-serif text-beige-900 flex items-center gap-2">
@@ -175,38 +239,20 @@ export default async function AdminDashboardPage() {
               <CardContent>
                 <div className="space-y-2">
                   <p className="text-2xl md:text-3xl font-bold text-beige-900">
-                    ${avgOrderValue.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+                    $
+                    {avgOrderValue.toLocaleString("es-AR", {
+                      maximumFractionDigits: 0,
+                    })}
                   </p>
                   <p className="text-xs text-beige-600">Por pedido</p>
                 </div>
               </CardContent>
             </Card>
-
-            {/* Quick Actions */}
-            <Card className="bg-white border-beige-200 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-beige-900">Acciones Rápidas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <QuickActionButton
-                  href="/admin/pedidos"
-                  icon={<Package className="h-4 w-4" />}
-                  label="Ver Pedidos"
-
-                />
-                <QuickActionButton
-                  href="/admin/new-product"
-                  icon={<ShoppingBag className="h-4 w-4" />}
-                  label="Nuevo Producto"
-                />
-
-              </CardContent>
-            </Card>
-          </div>
+          </div> */}
         </div>
       </div>
     </main>
-  )
+  );
 }
 
 /* --- STATS CARD COMPONENT --- */
@@ -218,31 +264,40 @@ function StatsCard({
   trend,
   variant = "default",
 }: {
-  title: string
-  value: number | string
-  icon: React.ReactNode
-  href: string
-  trend?: { value: number | string; label: string }
-  variant?: "default" | "success" | "warning" | "info"
+  title: string;
+  value: number | string;
+  icon: React.ReactNode;
+  href: string;
+  trend?: { value: number | string; label: string };
+  variant?: "default" | "success" | "warning" | "info";
 }) {
   const variantStyles = {
     default: "bg-beige-100 text-beige-700",
     success: "bg-emerald-50 text-emerald-700",
     warning: "bg-amber-50 text-amber-700",
     info: "bg-blue-50 text-blue-700",
-  }
+  };
 
   return (
-    <Link href={href} className="min-w-[280px] snap-center md:min-w-0 block group">
+    <Link
+      href={href}
+      className="min-w-[280px] snap-center md:min-w-0 block group"
+    >
       <Card className="bg-white border-beige-200 shadow-sm hover:shadow-md hover:border-beige-300 transition-all h-full">
         <CardContent className="p-5 md:p-6">
           <div className="flex items-start justify-between mb-3">
-            <div className={`p-2 rounded-lg ${variantStyles[variant]}`}>{icon}</div>
+            <div className={`p-2 rounded-lg ${variantStyles[variant]}`}>
+              {icon}
+            </div>
             <ArrowUpRight className="h-4 w-4 text-beige-400 group-hover:text-beige-600 transition-colors" />
           </div>
           <div className="space-y-1">
-            <p className="text-xs md:text-sm font-medium text-beige-600">{title}</p>
-            <p className="text-2xl md:text-3xl font-bold text-beige-900 leading-tight">{value}</p>
+            <p className="text-xs md:text-sm font-medium text-beige-600">
+              {title}
+            </p>
+            <p className="text-2xl md:text-3xl font-bold text-beige-900 leading-tight">
+              {value}
+            </p>
             {trend && (
               <p className="text-xs text-beige-500 flex items-center gap-1">
                 <TrendingUp className="h-3 w-3" />
@@ -253,7 +308,7 @@ function StatsCard({
         </CardContent>
       </Card>
     </Link>
-  )
+  );
 }
 
 /* --- STATUS BADGE COMPONENT --- */
@@ -269,26 +324,34 @@ function StatusBadge({ status }: { status: string }) {
       variant: "outline" as const,
       className: "border-emerald-300 text-emerald-700 bg-emerald-50",
     },
-    shipped: { label: "Enviado", variant: "outline" as const, className: "border-blue-300 text-blue-700 bg-blue-50" },
+    shipped: {
+      label: "Enviado",
+      variant: "outline" as const,
+      className: "border-blue-300 text-blue-700 bg-blue-50",
+    },
     delivered: {
       label: "Entregado",
       variant: "outline" as const,
       className: "border-green-300 text-green-700 bg-green-50",
     },
-    cancelled: { label: "Cancelado", variant: "outline" as const, className: "border-red-300 text-red-700 bg-red-50" },
-  }
+    cancelled: {
+      label: "Cancelado",
+      variant: "outline" as const,
+      className: "border-red-300 text-red-700 bg-red-50",
+    },
+  };
 
   const config = statusConfig[status as keyof typeof statusConfig] || {
     label: status,
     variant: "outline" as const,
     className: "border-beige-300 text-beige-700 bg-beige-50",
-  }
+  };
 
   return (
     <Badge variant={config.variant} className={`text-xs ${config.className}`}>
       {config.label}
     </Badge>
-  )
+  );
 }
 
 /* --- QUICK ACTION BUTTON --- */
@@ -298,10 +361,10 @@ function QuickActionButton({
   label,
   count,
 }: {
-  href: string
-  icon: React.ReactNode
-  label: string
-  count?: number
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  count?: number;
 }) {
   return (
     <Link
@@ -309,10 +372,16 @@ function QuickActionButton({
       className="flex items-center justify-between p-3 rounded-lg border border-beige-200 hover:border-beige-300 hover:bg-beige-50 transition-all group"
     >
       <div className="flex items-center gap-2">
-        <div className="text-beige-600 group-hover:text-beige-900 transition-colors">{icon}</div>
+        <div className="text-beige-600 group-hover:text-beige-900 transition-colors">
+          {icon}
+        </div>
         <span className="text-sm font-medium text-beige-900">{label}</span>
       </div>
-      {count !== undefined && <Badge className="bg-beige-200 text-beige-900 hover:bg-beige-300">{count}</Badge>}
+      {count !== undefined && (
+        <Badge className="bg-beige-200 text-beige-900 hover:bg-beige-300">
+          {count}
+        </Badge>
+      )}
     </Link>
-  )
+  );
 }
