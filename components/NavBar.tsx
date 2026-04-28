@@ -1,21 +1,14 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ChevronDown, LogOut, Menu, Sparkles, User, X } from "lucide-react";
 
 import { signOutAction } from "@/app/actions";
+import { CartIcon } from "./CartIcon";
 import { Button } from "./ui/button";
-
-import {
-  Menu,
-  X,
-  User,
-  LogOut,
-  ChevronDown,
-} from "lucide-react";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,8 +16,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-import { CartIcon } from "./CartIcon";
 
 interface NavbarProps {
   user: any | null;
@@ -43,39 +34,35 @@ export default function NavbarClient({ user, isAdmin }: NavbarProps) {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${isScrolled
-        ? "bg-beige-50/95 backdrop-blur-md shadow-md border-b border-beige-200/60"
-        : "bg-beige-100"
-        }`}
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+        isScrolled
+          ? "border-b border-beige-200/70 bg-beige-50/85 backdrop-blur-xl shadow-[0_12px_35px_rgba(93,75,60,0.08)]"
+          : "bg-transparent"
+      }`}
     >
-      {/* Top strip */}
-      <div className="bg-beige-800 text-beige-50 py-1.5 text-xs md:text-sm font-light px-4 md:px-6">
-        <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center">
-          <p>Empieza la temporada de Verano! ☀️😎</p>
-          <div className="flex items-center mt-1 sm:mt-0">
-            <span className="font-medium">Teléfono:</span>
-            <p className="ml-1 hover:underline cursor-pointer">
-              +54 3872226885
-            </p>
+      <div className="border-b border-beige-200/60 bg-beige-900 text-[11px] font-medium uppercase tracking-[0.22em] text-beige-100 md:text-xs">
+        <div className="container mx-auto flex flex-col items-center justify-between gap-1 px-4 py-2 sm:flex-row">
+          <div className="inline-flex items-center gap-2">
+            <Sparkles className="h-3.5 w-3.5" />
+            Nueva temporada disponible online
+          </div>
+          <div className="text-beige-200/90">
+            Envíos a todo el país · Salta, Argentina
           </div>
         </div>
       </div>
 
-      {/* Main Nav */}
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 md:h-20">
-
-          {/* Mobile Menu Button */}
+        <div className="flex h-16 items-center justify-between md:h-20">
           <button
-            className="md:hidden p-2 text-beige-800 hover:text-beige-600 transition"
+            className="p-2 text-beige-800 transition hover:text-beige-600 md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 md:w-11 md:h-11 relative rounded-full overflow-hidden border border-beige-300 shadow-sm">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="relative h-10 w-10 overflow-hidden rounded-full border border-beige-300/80 bg-white shadow-sm md:h-12 md:w-12">
               <Image
                 src="/almalucia.webp"
                 alt="Alma Lucia"
@@ -83,26 +70,29 @@ export default function NavbarClient({ user, isAdmin }: NavbarProps) {
                 className="object-cover"
               />
             </div>
-            <span className="font-serif text-xl md:text-2xl text-beige-800 hidden sm:block">
-              Alma Lucia
-            </span>
+            <div className="hidden sm:block">
+              <span className="block font-serif text-xl text-beige-900 md:text-2xl">
+                Alma Lucia
+              </span>
+              <span className="block text-[11px] uppercase tracking-[0.22em] text-beige-500">
+                Indumentaria
+              </span>
+            </div>
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center space-x-2">
+          <nav className="hidden items-center space-x-2 rounded-full border border-beige-200/70 bg-white/70 px-3 py-2 shadow-sm md:flex">
             <NavLink href="/">Inicio</NavLink>
             <NavLink href="/tienda">Tienda</NavLink>
             {isAdmin && <NavLink href="/admin">Admin</NavLink>}
           </nav>
 
-          {/* Right Side */}
           <div className="flex items-center space-x-2 md:space-x-3">
             <CartIcon />
 
             {user ? (
               <DropdownMenu>
-                <DropdownMenuTrigger className="inline-flex items-center gap-1 h-9 px-3 rounded-md bg-beige-200/60 hover:bg-beige-300 text-beige-700 font-medium">
-                  <span className="hidden sm:inline-block max-w-[120px] truncate">
+                <DropdownMenuTrigger className="inline-flex h-10 items-center gap-1 rounded-full border border-beige-200 bg-white/85 px-4 font-medium text-beige-700 shadow-sm transition hover:bg-white">
+                  <span className="hidden max-w-[120px] truncate sm:inline-block">
                     {user.email?.split("@")[0]}
                   </span>
                   <ChevronDown size={16} />
@@ -110,9 +100,9 @@ export default function NavbarClient({ user, isAdmin }: NavbarProps) {
 
                 <DropdownMenuContent
                   align="end"
-                  className="w-56 bg-beige-50 border border-beige-200 shadow-lg"
+                  className="w-56 border border-beige-200 bg-beige-50 shadow-lg"
                 >
-                  <div className="px-3 py-2 text-sm font-medium text-beige-800 border-b border-beige-200">
+                  <div className="border-b border-beige-200 px-3 py-2 text-sm font-medium text-beige-800">
                     <p className="truncate">{user.email}</p>
                   </div>
 
@@ -122,7 +112,7 @@ export default function NavbarClient({ user, isAdmin }: NavbarProps) {
                       className="flex items-center text-beige-700 hover:text-beige-900"
                     >
                       <User className="mr-2 h-4 w-4" />
-                      Mi Perfil
+                      Mi perfil
                     </Link>
                   </DropdownMenuItem>
 
@@ -130,28 +120,28 @@ export default function NavbarClient({ user, isAdmin }: NavbarProps) {
 
                   <DropdownMenuItem asChild>
                     <form action={signOutAction} className="w-full">
-                      <button className="flex items-center w-full text-beige-700 hover:text-beige-900">
+                      <button className="flex w-full items-center text-beige-700 hover:text-beige-900">
                         <LogOut className="mr-2 h-4 w-4" />
-                        Cerrar Sesión
+                        Cerrar sesión
                       </button>
                     </form>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="hidden sm:flex items-center space-x-1">
+              <div className="hidden items-center space-x-1 sm:flex">
                 <Button
                   asChild
                   size="sm"
                   variant="ghost"
-                  className="text-beige-700 hover:text-beige-900 hover:bg-beige-200/60"
+                  className="rounded-full px-4 text-beige-700 hover:bg-white/80 hover:text-beige-900"
                 >
-                  <Link href="/login">Iniciar Sesión</Link>
+                  <Link href="/login">Iniciar sesión</Link>
                 </Button>
 
                 <Button
                   asChild
-                  className="bg-beige-700 hover:bg-beige-800 text-beige-50 shadow-md"
+                  className="rounded-full bg-beige-800 px-5 text-beige-50 shadow-md transition hover:bg-beige-900"
                 >
                   <Link href="/sign-up">Registrarse</Link>
                 </Button>
@@ -161,9 +151,8 @@ export default function NavbarClient({ user, isAdmin }: NavbarProps) {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-beige-50 border-t border-beige-200 shadow-lg animate-in fade-in slide-in-from-top-2">
+        <div className="border-t border-beige-200 bg-beige-50 shadow-lg animate-in fade-in slide-in-from-top-2 md:hidden">
           <div className="container mx-auto px-4 py-4">
             <nav className="flex flex-col space-y-3">
               <MobileNav href="/" onClick={() => setIsMenuOpen(false)}>
@@ -180,27 +169,28 @@ export default function NavbarClient({ user, isAdmin }: NavbarProps) {
 
               {!user && (
                 <>
-                  <div className="h-px bg-beige-200 my-2"></div>
-                  <MobileNav href="/login">Iniciar Sesión</MobileNav>
+                  <div className="my-2 h-px bg-beige-200"></div>
+                  <MobileNav href="/login">Iniciar sesión</MobileNav>
                   <MobileNav href="/sign-up">Registrarse</MobileNav>
                 </>
               )}
 
               {user && (
                 <>
-                  <div className="h-px bg-beige-200 my-2" />
-                  <div className="px-3 py-2 text-sm text-beige-800 font-medium truncate">
+                  <div className="my-2 h-px bg-beige-200" />
+                  <div className="truncate px-3 py-2 text-sm font-medium text-beige-800">
                     {user.email}
                   </div>
 
                   <MobileNav href="/perfil">
                     <User className="mr-2 h-4 w-4" />
-                    Mi Perfil
+                    Mi perfil
                   </MobileNav>
 
-                  <form action={signOutAction} className="w-full mt-2">
-                    <button className="w-full flex items-center px-3 py-2 text-beige-700 hover:bg-beige-200 rounded-md">
-                      <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
+                  <form action={signOutAction} className="mt-2 w-full">
+                    <button className="flex w-full items-center rounded-md px-3 py-2 text-beige-700 hover:bg-beige-200">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Cerrar sesión
                     </button>
                   </form>
                 </>
@@ -213,13 +203,17 @@ export default function NavbarClient({ user, isAdmin }: NavbarProps) {
   );
 }
 
-/* --- Subcomponents --- */
-
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+function NavLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       href={href}
-      className="px-3 py-2 text-beige-700 hover:text-beige-900 hover:bg-beige-200/50 rounded-md text-sm font-medium transition"
+      className="rounded-full px-4 py-2 text-sm font-medium text-beige-700 transition hover:bg-beige-200/50 hover:text-beige-900"
     >
       {children}
     </Link>
@@ -239,7 +233,7 @@ function MobileNav({
     <Link
       href={href}
       onClick={onClick}
-      className="flex items-center px-3 py-2 text-beige-700 hover:text-beige-900 hover:bg-beige-200/60 rounded-md text-sm"
+      className="flex items-center rounded-md px-3 py-2 text-sm text-beige-700 hover:bg-beige-200/60 hover:text-beige-900"
     >
       {children}
     </Link>

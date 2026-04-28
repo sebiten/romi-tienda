@@ -18,7 +18,7 @@ const playfair = Playfair_Display({
 const SITE_NAME = "Alma Lucía";
 const SITE_DESCRIPTION =
   "Alma Lucía es una tienda de ropa femenina y masculina en Salta-Argentina. Moda actual, talles reales y toda la moda.";
-const SITE_URL = "https://almalucia.shop";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://almalucia.shop";
 const OG_IMAGE = `${SITE_URL}/almalucia.webp`; // Imagen principal
 const LOGO_IMAGE = `${SITE_URL}/almalucia.webp`; // También como logo para schema
 
@@ -165,9 +165,9 @@ export default async function RootLayout({
 
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <Navbar user={user} isAdmin={isAdmin} />
-          <main
-            className="flex-1 flex flex-col w-full min-h-screen bg-beige-50"
-          >{children}</main>
+          <main className="flex min-h-screen w-full flex-1 flex-col">
+            {children}
+          </main>
           <Footer />
         </ThemeProvider>
       </body>

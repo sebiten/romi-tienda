@@ -19,18 +19,19 @@ interface SendWhatsAppProps {
   phoneNumber: string; // Teléfono del dueño (o del negocio) para WhatsApp
 }
 
-const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET!;
-if (!BUCKET_NAME) {
-  throw new Error(
-    "Falta configurar NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET en .env.local"
-  );
-}
+const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
 
 const DeleteSchema = z.object({
   productId: z.string().uuid("El ID debe ser un UUID válido"),
 });
 
 export async function deleteProductAction(formData: FormData): Promise<void> {
+  if (!BUCKET_NAME) {
+    throw new Error(
+      "Falta configurar NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET en .env.local"
+    );
+  }
+
   const productId = formData.get("productId");
   console.log("deleteProductAction productId recibido:", productId);
 
@@ -77,7 +78,7 @@ export async function deleteProductAction(formData: FormData): Promise<void> {
   // 3) Borrar archivos del bucket "product-images" (nombre hardcodeado)
   if (paths.length > 0) {
     const { data: removed, error: storageError } = await supabase.storage
-      .from("product-images") // 👈 hardcodeado, sin BUCKET_NAME
+      .from(BUCKET_NAME)
       .remove(paths);
 
     console.log("Resultado remove():", removed, storageError);
@@ -121,7 +122,7 @@ export async function createOrderAction(
     .from("orders")
     .insert({
       user_id: userId,
-      status: "pendiente-pago",
+      status: "pending",
       created_at: new Date(),
     })
     .select("*")
@@ -243,7 +244,7 @@ export async function markOrderAsPaidAction(orderId: string) {
 
   const { error } = await supabase
     .from("orders")
-    .update({ status: "pagado" })
+    .update({ status: "paid" })
     .eq("id", orderId);
 
   if (error) {

@@ -1,19 +1,15 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { SlidersHorizontal } from "lucide-react";
 import DesktopFilters from "./DesktopFilters";
 import ProductGrid from "@/components/ProductGrid";
 import ProductSkeletonGrid from "@/components/skeletons/ProductSkeleton";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import MobileFilters from "./MobileFilters";
-import { DialogTitle } from "@radix-ui/react-dialog";
 
 export default function ProductsClient({ products, categories }: any) {
-
-    // -----------------------------
-    // ESTADOS
-    // -----------------------------
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -26,15 +22,10 @@ export default function ProductsClient({ products, categories }: any) {
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
     const [filterDiscount, setFilterDiscount] = useState(false);
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const brands = ["Nike", "Adidas", "Vans", "Jordan"];
 
-    // 🔥 AGREGADO: estado de loader
-    const [isLoading, setIsLoading] = useState(false);
-
-    // -----------------------------
-    // TOGGLES
-    // -----------------------------
     const toggleSize = (size: string) => {
         setSelectedSizes((prev) =>
             prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
@@ -49,9 +40,7 @@ export default function ProductsClient({ products, categories }: any) {
 
     const toggleStock = (value: string) => {
         setSelectedStock((prev) =>
-            prev.includes(value)
-                ? prev.filter((v) => v !== value)
-                : [...prev, value]
+            prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
         );
     };
 
@@ -61,13 +50,10 @@ export default function ProductsClient({ products, categories }: any) {
         );
     };
 
-    // -----------------------------
-    // LOADER cuando cambian filtros
-    // -----------------------------
     useEffect(() => {
         setIsLoading(true);
-        const t = setTimeout(() => setIsLoading(false), 300); // 300ms — simple, suave
-        return () => clearTimeout(t);
+        const timeoutId = setTimeout(() => setIsLoading(false), 300);
+        return () => clearTimeout(timeoutId);
     }, [
         selectedCategories,
         priceRange,
@@ -77,13 +63,9 @@ export default function ProductsClient({ products, categories }: any) {
         selectedColors,
         selectedStock,
         selectedBrands,
-        filterDiscount
+        filterDiscount,
     ]);
 
-
-    // -----------------------------
-    // FILTRADO
-    // -----------------------------
     const filtered = useMemo(() => {
         let result = [...products];
 
@@ -99,9 +81,7 @@ export default function ProductsClient({ products, categories }: any) {
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
             result = result.filter(
-                (p) =>
-                    p.title.toLowerCase().includes(q) ||
-                    p.description?.toLowerCase().includes(q)
+                (p) => p.title.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q)
             );
         }
 
@@ -121,8 +101,7 @@ export default function ProductsClient({ products, categories }: any) {
             result = result.filter((p) => {
                 if (selectedStock.includes("out_stock") && p.stock === 0) return true;
                 if (selectedStock.includes("in_stock") && p.stock > 0) return true;
-                if (selectedStock.includes("low_stock") && p.stock <= 5 && p.stock > 0)
-                    return true;
+                if (selectedStock.includes("low_stock") && p.stock <= 5 && p.stock > 0) return true;
                 return false;
             });
         }
@@ -137,11 +116,7 @@ export default function ProductsClient({ products, categories }: any) {
 
         switch (sortOption) {
             case "newest":
-                result.sort(
-                    (a, b) =>
-                        new Date(b.created_at).getTime() -
-                        new Date(a.created_at).getTime()
-                );
+                result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                 break;
             case "price-asc":
                 result.sort((a, b) => a.price - b.price);
@@ -153,9 +128,7 @@ export default function ProductsClient({ products, categories }: any) {
                 result.sort((a, b) => a.title.localeCompare(b.title));
                 break;
             case "discount-desc":
-                result.sort(
-                    (a, b) => (b.discount || 0) - (a.discount || 0)
-                );
+                result.sort((a, b) => (b.discount || 0) - (a.discount || 0));
                 break;
         }
 
@@ -170,12 +143,9 @@ export default function ProductsClient({ products, categories }: any) {
         selectedColors,
         selectedStock,
         selectedBrands,
-        filterDiscount
+        filterDiscount,
     ]);
 
-    // -----------------------------
-    // PAGINACIÓN
-    // -----------------------------
     const productsPerPage = 9;
     const totalPages = Math.ceil(filtered.length / productsPerPage);
 
@@ -184,14 +154,9 @@ export default function ProductsClient({ products, categories }: any) {
         return filtered.slice(start, start + productsPerPage);
     }, [filtered, currentPage]);
 
-    // -----------------------------
-    // OTROS
-    // -----------------------------
     const toggleCategory = useCallback((id: string) => {
         setSelectedCategories((prev) =>
-            prev.includes(id)
-                ? prev.filter((c) => c !== id)
-                : [...prev, id]
+            prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
         );
         setCurrentPage(1);
     }, []);
@@ -211,32 +176,60 @@ export default function ProductsClient({ products, categories }: any) {
 
     const getCategoryNameById = (id: string): string => {
         const found = categories.find((c: any) => c.id === id);
-        return found?.name ?? "Sin categoría";
+        return found?.name ?? "Sin categoria";
     };
 
-    // -----------------------------
-    // RENDER
-    // -----------------------------
     return (
-        <main className="bg-beige-50 min-h-screen py-12 px-4">
+        <main className="min-h-screen bg-beige-50 px-4 py-6 md:py-10">
             <div className="container mx-auto max-w-7xl">
+                <section className="mb-5 flex flex-col gap-3 border-b border-[rgba(125,91,63,0.12)] pb-5 md:mb-8 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <h1 className="font-serif text-4xl  text-[var(--color-ink)] md:text-4xl">
+                            Tienda
+                        </h1>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-muted)] md:text-base hidden md:block">
+                            {/* {filtered.length} productos disponibles. Usa filtros para encontrar talle, color o precio. */}
+                            Usa filtros para encontrar talle, color o precio.
+                        </p>
+                    </div>
 
-                {/* MOBILE FILTER BUTTON */}
-                <div className="flex justify-between items-center mb-6 md:hidden">
+                    <div className="flex flex-wrap gap-2 text-xs text-[var(--color-muted)] hidden md:flex">
+                        <span className="rounded-full border border-[rgba(125,91,63,0.14)] bg-white/75 px-3 py-1.5">
+                            {products.length} en catalogo
+                        </span>
+                        <span className="rounded-full border border-[rgba(125,91,63,0.14)] bg-white/75 px-3 py-1.5">
+                            {categories.length} categorias
+                        </span>
+                    </div>
+                </section>
+
+                <div className="mb-4 flex items-center justify-between gap-3 md:hidden">
+                    <div>
+                        <p className="text-sm font-medium text-[var(--color-ink)]">
+                            {filtered.length} resultados
+                        </p>
+                        <p className="text-xs text-[var(--color-muted)]">
+                            Ajusta filtros para refinar la busqueda
+                        </p>
+                    </div>
                     <Sheet open={isMobileFiltersOpen} onOpenChange={setIsMobileFiltersOpen}>
                         <SheetTrigger asChild>
-                            <DialogTitle>
-                                <Button
-                                    variant="outline"
-                                    className="md:hidden border-beige-300 text-beige-700"
-                                    onClick={() => setIsMobileFiltersOpen(true)}
-                                >
-                                    Filtros
-                                </Button>
-                            </DialogTitle>
+                            <Button
+                                variant="outline"
+                                className="border-[rgba(125,91,63,0.18)] bg-white text-[var(--color-ink)] shadow-sm"
+                                onClick={() => setIsMobileFiltersOpen(true)}
+                            >
+                                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                Filtros
+                            </Button>
                         </SheetTrigger>
 
-                        <SheetContent side="left" className="w-[85%] sm:w-[350px] bg-beige-50">
+                        <SheetContent side="left" className="w-[85%] bg-beige-50 sm:w-[350px]">
+                            <SheetHeader className="mb-3">
+                                <SheetTitle className="text-left font-serif text-2xl text-[var(--color-ink)]">
+                                    Refinar busqueda
+                                </SheetTitle>
+                            </SheetHeader>
                             <MobileFilters
                                 categories={categories}
                                 selectedCategories={selectedCategories}
@@ -263,11 +256,8 @@ export default function ProductsClient({ products, categories }: any) {
                     </Sheet>
                 </div>
 
-                {/* LAYOUT */}
                 <div className="flex gap-8">
-
-                    {/* DESKTOP FILTERS */}
-                    <div className="hidden md:block w-64">
+                    <div className="hidden w-64 md:block">
                         <DesktopFilters
                             categories={categories}
                             selectedCategories={selectedCategories}
@@ -291,7 +281,6 @@ export default function ProductsClient({ products, categories }: any) {
                         />
                     </div>
 
-                    {/* PRODUCT GRID + LOADER */}
                     <div className="flex-1">
                         {isLoading ? (
                             <ProductSkeletonGrid />
@@ -312,7 +301,6 @@ export default function ProductsClient({ products, categories }: any) {
                             />
                         )}
                     </div>
-
                 </div>
             </div>
         </main>

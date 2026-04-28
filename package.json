@@ -5,6 +5,7 @@
     "build": "next build",
     "start": "next start"
   },
+  "packageManager": "pnpm@10.33.0",
   "dependencies": {
     "@ngrok/ngrok": "^1.6.0",
     "@radix-ui/react-accordion": "^1.2.3",
@@ -19,15 +20,15 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.3",
     "@radix-ui/react-toast": "^1.2.6",
-    "@supabase/ssr": "^0.8.0",
+    "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.86.0",
-    "autoprefixer": "10.4.20",
+    "autoprefixer": "10.5.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.5.0",
     "lucide-react": "^0.468.0",
     "mercadopago": "^2.10.0",
-    "next": "16.0.10",
+    "next": "16.2.4",
     "next-cloudinary": "^6.16.0",
     "next-themes": "^0.4.6",
     "prettier": "^3.3.3",
@@ -40,9 +41,9 @@
   "devDependencies": {
     "@types/node": "22.10.2",
     "@types/react": "^19.0.2",
-    "@types/react-dom": "19.0.2",
-    "baseline-browser-mapping": "^2.8.32",
-    "postcss": "8.4.49",
+    "@types/react-dom": "19.2.3",
+    "baseline-browser-mapping": "^2.10.20",
+    "postcss": "8.5.10",
     "tailwind-merge": "^2.5.2",
     "tailwindcss": "3.4.17",
     "tailwindcss-animate": "^1.0.7",
@@ -50,7 +51,7 @@
   },
   "name": "romi-tienda",
   "version": "1.0.0",
-  "description": "<a href=\"https://demo-nextjs-with-supabase.vercel.app/\">\r   <img alt=\"Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase\" src=\"https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png\">\r   <h1 align=\"center\">Next.js and Supabase Starter Kit</h1>\r </a>",
+  "description": "E-commerce de indumentaria con Next.js, Supabase y Mercado Pago.",
   "main": "postcss.config.js",
   "directories": {
     "lib": "lib"
@@ -60,8 +61,8 @@
     "url": "git+https://github.com/sebiten/romi-tienda.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Romi Tienda",
+  "license": "UNLICENSED",
   "bugs": {
     "url": "https://github.com/sebiten/romi-tienda/issues"
   },

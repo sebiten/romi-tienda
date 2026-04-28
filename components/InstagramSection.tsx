@@ -1,10 +1,9 @@
-import { Instagram } from 'lucide-react';
-import { Button } from "./ui/button";
 import Image from "next/image";
 import Link from "next/link";
+import { Instagram } from "lucide-react";
+import { Button } from "./ui/button";
 
 export default function InstagramSection() {
-  // Sample Instagram posts - replace with your actual content
   const instagramPosts = [
     {
       id: 1,
@@ -29,55 +28,64 @@ export default function InstagramSection() {
   ];
 
   return (
-    <section className="py-20 bg-[#F5F1EA] relative">
-      {/* Decorative elements */}
-      <div className="absolute -top-8 right-0 w-64 h-64 bg-[#D6C7B0]/20 rounded-full blur-3xl" />
-      <div className="absolute -bottom-8 left-0 w-64 h-64 bg-[#D6C7B0]/20 rounded-full blur-3xl" />
-      
+    <section className="relative py-20">
+      <div className="absolute -top-8 right-0 h-64 w-64 rounded-full bg-beige-200/20 blur-3xl" />
+      <div className="absolute -bottom-8 left-0 h-64 w-64 rounded-full bg-white/40 blur-3xl" />
+
       <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="font-serif text-4xl md:text-5xl font-light tracking-wider mb-4 text-[#5D4B3C]">
-            Síguenos en Instagram
+        <div className="mb-12 text-center">
+          <p className="text-xs uppercase tracking-[0.28em] text-beige-500">
+            Comunidad
+          </p>
+          <h2 className="mt-3 font-serif text-4xl font-medium tracking-wide text-beige-900 md:text-5xl">
+            Seguinos en Instagram
           </h2>
-          <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-[#A69681] to-transparent mx-auto mb-6"></div>
-          <p className="text-lg max-w-2xl mx-auto text-[#5D4B3C]/80 font-light">
-            Descubre nuestras últimas colecciones y obtén inspiración para tus looks diarios
+          <div className="mx-auto mb-6 mt-5 h-px w-24 bg-gradient-to-r from-transparent via-beige-400 to-transparent"></div>
+          <p className="mx-auto max-w-2xl text-lg text-beige-700/80">
+            Inspiración real, lanzamientos y looks para ver cómo vive la marca fuera de la tienda.
           </p>
         </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+
+        <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-4">
           {instagramPosts.map((post) => (
-            <Link 
-              href={post.link} 
-              target="_blank" 
+            <Link
+              href={post.link}
+              target="_blank"
               rel="noopener noreferrer"
               key={post.id}
-              className="group relative overflow-hidden rounded-lg aspect-square"
+              className="group relative aspect-square overflow-hidden rounded-[1.25rem]"
             >
               <Image
                 src={post.imageUrl || "/placeholder.svg"}
                 alt="Instagram post"
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
                 sizes="(max-width: 768px) 50vw, 25vw"
               />
-              <div className="absolute inset-0 bg-[#5D4B3C]/0 group-hover:bg-[#5D4B3C]/30 transition-all duration-300 flex items-center justify-center">
-                <Instagram className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={32} />
+              <div className="absolute inset-0 flex items-center justify-center bg-beige-900/0 transition-all duration-300 group-hover:bg-beige-900/30">
+                <Instagram
+                  className="text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  size={32}
+                />
               </div>
             </Link>
           ))}
         </div>
-        
-        <div className="text-center">
 
+        <div className="text-center">
           <Button
-            className="bg-transparent hover:bg-[#A69681] text-[#5D4B3C] hover:text-[#F5F1EA] border border-[#A69681] rounded-full px-8 py-6 text-lg font-light tracking-wide transition-all duration-300 flex items-center gap-2"
+            asChild
+            className="rounded-full border border-beige-300 bg-white/70 px-8 py-6 text-lg text-beige-800 shadow-sm transition-all duration-300 hover:bg-beige-800 hover:text-beige-50"
           >
-            <Link href="https://instagram.com/almalucia08" target="_blank" rel="noopener noreferrer">
-              Explora más en Instagram
+            <Link
+              href="https://www.instagram.com/almalucia.indumentaria"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2"
+            >
+              Explorar más en Instagram
+              <Instagram size={20} />
             </Link>
-            <Instagram size={20} />
-    
           </Button>
         </div>
       </div>
